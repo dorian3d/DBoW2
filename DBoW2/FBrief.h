@@ -24,7 +24,7 @@
 #include <string>
 
 #include "FClass.h"
-#include "DVision.h"
+#include <DVision/DVision.h>
 
 namespace DBoW2 {
 

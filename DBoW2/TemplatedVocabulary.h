@@ -32,7 +32,7 @@
 #include "BowVector.h"
 #include "ScoringObject.h"
 
-#include "DUtils.h"
+#include <DUtils/DUtils.h>
 
 using namespace std;
 

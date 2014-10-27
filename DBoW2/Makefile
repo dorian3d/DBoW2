@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-DNDEBUG -fPIC -O3 -Wall -I../DUtils -I../DUtilsCV -I../DVision \
+CFLAGS=-DNDEBUG -fPIC -O3 -Wall \
   $(shell pkg-config --cflags opencv)
 LFLAGS=-shared $(shell pkg-config --libs opencv)
 

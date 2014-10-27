@@ -20,7 +20,7 @@
 #include <string>
 #include <sstream>
 
-#include "DVision.h"
+#include <DVision/DVision.h>
 #include "FBrief.h"
 
 using namespace std;
