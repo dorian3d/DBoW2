@@ -1,4 +1,4 @@
-CC=gcc
+CC=g++
 CFLAGS=-DNDEBUG -O3 -Wall -IDBoW2 \
   $(shell pkg-config --cflags opencv)
 LFLAGS=-lDBoW2 -lDVision -lDUtilsCV -lDUtils \

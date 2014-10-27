@@ -1,4 +1,4 @@
-CC=gcc
+CC=g++
 CFLAGS=-DNDEBUG -fPIC -O3 -Wall \
   $(shell pkg-config --cflags opencv)
 LFLAGS=-shared $(shell pkg-config --libs opencv)
