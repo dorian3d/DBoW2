@@ -39,18 +39,6 @@ DBoW2 requires OpenCV and the `Boost::dynamic_bitset` class in order to use the 
     $ sudo apt-get install libboost-dev
 
 
-To build the library and try the demo, just type:
-
-    $ make
-    $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib
-    $ ./demo
-
-
-To install the library in your system (`/usr/local` by default), type:
-
-    $ make install
-
-
 ## Usage notes
 
 ### Weighting and Scoring
