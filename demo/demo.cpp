@@ -3,6 +3,7 @@
  * Date: November 2011
  * Author: Dorian Galvez-Lopez
  * Description: demo application of DBoW2
+ * License: see the LICENSE.txt file
  */
 
 #include <iostream>
