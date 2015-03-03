@@ -67,6 +67,7 @@ namespace DBoW2
 #include "QueryResults.h"
 #include "FSurf64.h"
 #include "FBrief.h"
+#include "FORB.h"
 
 /// SURF64 Vocabulary
 typedef DBoW2::TemplatedVocabulary<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 

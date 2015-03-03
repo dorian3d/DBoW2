@@ -10,7 +10,7 @@ set(HDRS
   include/DBoW2/DBoW2.h               include/DBoW2/FClass.h              include/DBoW2/FeatureVector.h
   include/DBoW2/ScoringObject.h       include/DBoW2/TemplatedVocabulary.h)
 set(SRCS 
-  src/BowVector.cpp     src/FBrief.cpp        src/FSurf64.cpp       
+  src/BowVector.cpp     src/FBrief.cpp        src/FSurf64.cpp       src/FORB.cpp
   src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp)
 
 find_package(OpenCV REQUIRED)
