@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <limits.h>
 
-#include <Dutils/DUtils.h>
+#include <DUtils/DUtils.h>
 #include <DVision/DVision.h>
 #include <FORB.h>
 
