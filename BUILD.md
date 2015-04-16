@@ -40,7 +40,7 @@ where `n` is the number of threads to use for the compilation.
 
 #### DLib
 You can refer to the original documentation [here](https://github.com/dorian3d/DLib).
--DOpenCV_DIR=/Users/sgaspari/dev/code/lib/opencv/buildclangOMP/install/share/OpenCV/
+
 In short you can just run
 ```bash
 mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=`pwd`/install -DOpenCV_DIR=<your path to install/share/OpenCV/ dir of opencv>
