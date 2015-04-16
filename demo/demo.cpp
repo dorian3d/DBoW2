@@ -11,6 +11,7 @@
 
 // DBoW2
 #include "DBoW2.h" // defines Surf64Vocabulary and Surf64Database
+// defines SiftVocabulary and SiftDatabase
 
 #include "DUtils.h"
 #include "DUtilsCV.h" // defines macros CVXX
@@ -28,7 +29,7 @@ using namespace DBoW2;
 using namespace DUtils;
 using namespace std;
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void loadFeatures(vector<vector<vector<float> > > &features);
 void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
@@ -37,15 +38,15 @@ void testVocCreation(const vector<vector<vector<float> > > &features);
 void testDatabase(const vector<vector<vector<float> > > &features);
 
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 // number of training images
-const int NIMAGES = 4;
+const int NIMAGES = 3;
 
 // extended surf gives 128-dimensional vectors
-const bool EXTENDED_SURF = false;
+// const bool EXTENDED_SURF = false;
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void wait()
 {
@@ -76,23 +77,39 @@ void loadFeatures(vector<vector<vector<float> > > &features)
   features.clear();
   features.reserve(NIMAGES);
 
-  cv::SURF surf(400, 4, 2, EXTENDED_SURF);
+//  cv::SURF surf(400, 4, 2, EXTENDED_SURF);
+  cv::SIFT sift(0, 3, 0.04, 10, 1.6);
 
-  cout << "Extracting SURF features..." << endl;
+//  cout << "Extracting SURF features..." << endl;
+  cout << "Extracting SIFT features..." << endl;
   for(int i = 0; i < NIMAGES; ++i)
   {
     stringstream ss;
-    ss << "images/image" << i << ".png";
+    ss << "images/image" << i << ".jpg";
 
     cv::Mat image = cv::imread(ss.str(), 0);
     cv::Mat mask;
     vector<cv::KeyPoint> keypoints;
+//    vector<float> descriptors;
     vector<float> descriptors;
+    cv::Mat descriptors2; //(128, 1, cv::DataType<float>::type);
+//    cout << "Compute keypoints and descriptors of images/image" << i << ".jpg"  << endl;
+//    surf(image, mask, keypoints, descriptors);
+    sift(image, mask, keypoints, descriptors2);
 
-    surf(image, mask, keypoints, descriptors);
+    for (unsigned i = 0; i < 128; i++)
+    {
+        descriptors.push_back(descriptors2.at<float>(i,0)); ///255.0f);
+        std::cout << descriptors[i] << " ";
+    }
+    std::cout << std::endl;
 
+    cout << "passe la" << endl;
     features.push_back(vector<vector<float> >());
-    changeStructure(descriptors, features.back(), surf.descriptorSize());
+//    changeStructure(descriptors, features.back(), surf.descriptorSize());
+//    changeStructure(descriptors, features.back(), 128); //sift.descriptorSize());
+    std::cout << "sift.descriptorSize() = " << sift.descriptorSize() << std::endl;
+    changeStructure(descriptors, features.back(), sift.descriptorSize());
   }
 }
 
@@ -115,13 +132,14 @@ void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
 
 void testVocCreation(const vector<vector<vector<float> > > &features)
 {
-  // branching factor and depth levels 
+  // branching factor and depth levels
   const int k = 9;
   const int L = 3;
   const WeightingType weight = TF_IDF;
   const ScoringType score = L1_NORM;
 
-  Surf64Vocabulary voc(k, L, weight, score);
+//  Surf64Vocabulary voc(k, L, weight, score);
+  SiftVocabulary voc(k, L, weight, score);
 
   cout << "Creating a small " << k << "^" << L << " vocabulary..." << endl;
   voc.create(features);
@@ -139,7 +157,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features)
     for(int j = 0; j < NIMAGES; j++)
     {
       voc.transform(features[j], v2);
-      
+
       double score = voc.score(v1, v2);
       cout << "Image " << i << " vs Image " << j << ": " << score << endl;
     }
@@ -158,11 +176,13 @@ void testDatabase(const vector<vector<vector<float> > > &features)
   cout << "Creating a small database..." << endl;
 
   // load the vocabulary from disk
-  Surf64Vocabulary voc("small_voc.yml.gz");
-  
-  Surf64Database db(voc, false, 0); // false = do not use direct index
+//  Surf64Vocabulary voc("small_voc.yml.gz");
+  SiftVocabulary voc("small_voc.yml.gz");
+
+//  Surf64Database db(voc, false, 0); // false = do not use direct index
+  SiftDatabase db(voc, false, 0); // false = do not use direct index
   // (so ignore the last param)
-  // The direct index is useful if we want to retrieve the features that 
+  // The direct index is useful if we want to retrieve the features that
   // belong to some vocabulary node.
   // db creates a copy of the vocabulary, we may get rid of "voc" now
 
@@ -184,7 +204,7 @@ void testDatabase(const vector<vector<vector<float> > > &features)
   {
     db.query(features[i], ret, 4);
 
-    // ret[0] is always the same image in this case, because we added it to the 
+    // ret[0] is always the same image in this case, because we added it to the
     // database. ret[1] is the second best match.
 
     cout << "Searching for Image " << i << ". " << ret << endl;
@@ -197,10 +217,11 @@ void testDatabase(const vector<vector<vector<float> > > &features)
   cout << "Saving database..." << endl;
   db.save("small_db.yml.gz");
   cout << "... done!" << endl;
-  
-  // once saved, we can load it again  
+
+  // once saved, we can load it again
   cout << "Retrieving database once again..." << endl;
-  Surf64Database db2("small_db.yml.gz");
+//  Surf64Database db2("small_db.yml.gz");
+  SiftDatabase db2("small_db.yml.gz");
   cout << "... done! This is: " << endl << db2 << endl;
 }
 

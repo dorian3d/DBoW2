@@ -8,10 +8,10 @@ set(HDRS
   include/DBoW2/BowVector.h           include/DBoW2/FBrief.h              include/DBoW2/FSurf64.h
   include/DBoW2/QueryResults.h        include/DBoW2/TemplatedDatabase.h   include/DBoW2/FORB.h
   include/DBoW2/DBoW2.h               include/DBoW2/FClass.h              include/DBoW2/FeatureVector.h
-  include/DBoW2/ScoringObject.h       include/DBoW2/TemplatedVocabulary.h)
-set(SRCS 
+  include/DBoW2/ScoringObject.h       include/DBoW2/TemplatedVocabulary.h include/DBoW2/FSift.h)
+set(SRCS
   src/BowVector.cpp     src/FBrief.cpp        src/FSurf64.cpp       src/FORB.cpp
-  src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp)
+  src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp src/FSift.cpp)
 
 find_package(OpenCV REQUIRED)
 find_package(DLib REQUIRED)
@@ -37,5 +37,5 @@ if(BUILD_DBoW2)
 endif()
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/DBoW2Config.cmake"
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
-install(FILES "${PROJECT_BINARY_DIR}/DBoW2Config.cmake" 
+install(FILES "${PROJECT_BINARY_DIR}/DBoW2Config.cmake"
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/DBoW2/)

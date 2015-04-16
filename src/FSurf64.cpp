@@ -6,7 +6,7 @@
  * License: see the LICENSE.txt file
  *
  */
- 
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -20,14 +20,14 @@ namespace DBoW2 {
 
 // --------------------------------------------------------------------------
 
-void FSurf64::meanValue(const std::vector<FSurf64::pDescriptor> &descriptors, 
+void FSurf64::meanValue(const std::vector<FSurf64::pDescriptor> &descriptors,
   FSurf64::TDescriptor &mean)
 {
   mean.resize(0);
   mean.resize(FSurf64::L, 0);
-  
+
   float s = descriptors.size();
-  
+
   vector<FSurf64::pDescriptor>::const_iterator it;
   for(it = descriptors.begin(); it != descriptors.end(); ++it)
   {
@@ -43,7 +43,7 @@ void FSurf64::meanValue(const std::vector<FSurf64::pDescriptor> &descriptors,
 }
 
 // --------------------------------------------------------------------------
-  
+
 double FSurf64::distance(const FSurf64::TDescriptor &a, const FSurf64::TDescriptor &b)
 {
   double sqd = 0.;
@@ -70,11 +70,11 @@ std::string FSurf64::toString(const FSurf64::TDescriptor &a)
 }
 
 // --------------------------------------------------------------------------
-  
+
 void FSurf64::fromString(FSurf64::TDescriptor &a, const std::string &s)
 {
   a.resize(FSurf64::L);
-  
+
   stringstream ss(s);
   for(int i = 0; i < FSurf64::L; ++i)
   {
@@ -84,7 +84,7 @@ void FSurf64::fromString(FSurf64::TDescriptor &a, const std::string &s)
 
 // --------------------------------------------------------------------------
 
-void FSurf64::toMat32F(const std::vector<TDescriptor> &descriptors, 
+void FSurf64::toMat32F(const std::vector<TDescriptor> &descriptors,
     cv::Mat &mat)
 {
   if(descriptors.empty())
@@ -92,12 +92,12 @@ void FSurf64::toMat32F(const std::vector<TDescriptor> &descriptors,
     mat.release();
     return;
   }
-  
+
   const int N = descriptors.size();
   const int L = FSurf64::L;
-  
+
   mat.create(N, L, CV_32F);
-  
+
   for(int i = 0; i < N; ++i)
   {
     const TDescriptor& desc = descriptors[i];
@@ -106,7 +106,7 @@ void FSurf64::toMat32F(const std::vector<TDescriptor> &descriptors,
     {
       *p = desc[j];
     }
-  } 
+  }
 }
 
 // --------------------------------------------------------------------------
