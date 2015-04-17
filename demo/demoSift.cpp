@@ -23,6 +23,8 @@
 #include <opencv/highgui.h>
 #if CV24
 #include <opencv2/nonfree/features2d.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/core/core.hpp>
 #endif
 
 
@@ -38,11 +40,11 @@ void storeImages(const char* imagesDirectory, vector<string>& imagesNames);
 void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
   int L);
 void testVocCreation(const vector<vector<vector<float> > > &features,
-  string& sOutDirectory);
+  string& sOutDirectory, string& vocName, int k, int L);
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
   const vector<vector<vector<float> > > &queryFeatures,
   vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-  string& sOutDirectory);
+  string& sOutDirectory, string& vocName);
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -59,34 +61,69 @@ void wait()
   getchar();
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+const char* keys =
+  "{help h usage ? |   | print this message                              }"
+  "{@pathToDataset  |   | path to the directory containing dataset images }"
+  "{@pathToQueries  |   | path to the directory containing query images   }"
+  "{@pathToOutput   |   | path to the output directory                    }"
+  "{vocName        |   | name of the vocabulary file                     }"
+  "{k              | 9 | max number of sons of each node                 }"
+  "{L              | 3 | max depth of the vocabulary tree                }"
+;
+
 // ----------------------------------------------------------------------------
 
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
   try {
-    if (argc != 4) throw std::string("Invalid command line.");
+    if (argc < 5) throw std::string("Invalid command line.");
   } catch (const std::string& s) {
       std::cerr << "Correct usage is: " << '\n'
       << "./demoSift <Dataset images directory> "
       << "<Query images directory> "
       << "<Output directory>" << '\n'
+      << "<Name of the vocabulary file in the output directory>" << '\n'
+      << "<k value (max number of sons of each node)>" << '\n'
+      << "<L value (max depth of the vocabulary tree)>" << '\n'
       << "Example: " << '\n'
-      << "./demoSift ~/images/datasetImages ~/images/queryImages ~/images/output"
+      << "./demoSift ~/images/datasetImages ~/images/queryImages voc.yml.gz 10 6"
       << std::endl;
 
       std::cerr << s << std::endl;
       return EXIT_FAILURE;
   }
+//  cv::CommandLineParser parser(argc, argv, keys);
+//  string sDatasetImagesDirectory = parser.get<string>("pathToDataset"); //argv[1];
+//  string sQueryImagesDirectory   = parser.get<string>("pathToQueries"); //argv[2];
+//  string sOutDirectory = parser.get<string>("pathToOutput"); //argv[3];
+//  string vocName = parser.get<string>("vocName"); //argv[4];
 
-  const char* sDatasetImagesDirectory = argv[1];
-  const char* sQueryImagesDirectory   = argv[2];
+  string sDatasetImagesDirectory = argv[1];
+  string sQueryImagesDirectory   = argv[2];
   string sOutDirectory = argv[3];
+  string vocName = argv[4];
+  int k = 3;
+  int L = 9;
+
+  if (argc >= 6)
+  {
+    k = atoi(argv[5]);
+  }
+
+  if (argc >= 7)
+  {
+    L = atoi(argv[6]);
+  }
+
+  std::cout << "path to dataset is " << sDatasetImagesDirectory << std::endl;
 
   vector<string> datasetImagesNames;
   vector<string> queryImagesNames;
 
-  storeImages(sDatasetImagesDirectory, datasetImagesNames);
-  storeImages(sQueryImagesDirectory  , queryImagesNames);
+  storeImages(sDatasetImagesDirectory.c_str(), datasetImagesNames);
+  storeImages(sQueryImagesDirectory.c_str()  , queryImagesNames);
 
   NIMAGES_DATASET = datasetImagesNames.size();
   NIMAGES_QUERY   = queryImagesNames.size();
@@ -113,12 +150,12 @@ int main(int argc, char **argv)
   loadFeatures(datasetFeatures, sDatasetImagesDirectory, datasetImagesNames);
   loadFeatures(queryFeatures  , sQueryImagesDirectory  , queryImagesNames  );
 
-  testVocCreation(datasetFeatures, sOutDirectory);
+  testVocCreation(datasetFeatures, sOutDirectory, vocName, k, L);
 
   wait();
 
   testDatabase(datasetFeatures, queryFeatures, datasetImagesNames,
-    queryImagesNames, sOutDirectory);
+    queryImagesNames, sOutDirectory, vocName);
 
   return 0;
 }
@@ -131,7 +168,7 @@ void storeImages(const char* imagesDirectory, vector<string>& imagesNames)
 
   if ( repertoire == NULL)
   {
-    cout << "The images directory" << imagesDirectory << " cannot be found" << endl;
+    cout << "The images directory : " << imagesDirectory << " cannot be found" << endl;
   }
   else
   {
@@ -196,11 +233,30 @@ void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
 // ----------------------------------------------------------------------------
 
 void testVocCreation(const vector<vector<vector<float> > > &features,
-  string& sOutDirectory)
+  string& sOutDirectory, string& vocName, int k, int L)
 {
+  DIR * repertoire = opendir(sOutDirectory.c_str());
+
+  if (repertoire == NULL)
+  {
+    cout << "The output directory : " << sOutDirectory << " cannot be found" << endl;
+  }
+  else
+  {
+    struct dirent * ent;
+    while ( (ent = readdir(repertoire)) != NULL)
+    {
+      if (strncmp(ent->d_name, vocName.c_str(), vocName.size()) == 0)
+      {
+        cout << "The vocabulary file " << vocName
+          << " already exists, there is no need to recreate it" << endl;
+        return;
+      }
+    }
+  closedir(repertoire);
+  }
+
   // branching factor and depth levels
-  const int k = 9;
-  const int L = 3;
   const WeightingType weight = TF_IDF;
   const ScoringType score = L1_NORM;
 
@@ -230,7 +286,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 
   // save the vocabulary to disk
   cout << endl << "Saving vocabulary..." << endl;
-  voc.save(sOutDirectory + "/voc.yml.gz");
+  voc.save(sOutDirectory + "/" + vocName);
   cout << "Done" << endl;
 }
 
@@ -239,12 +295,12 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
   const vector<vector<vector<float> > > &queryFeatures,
   vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-  string& sOutDirectory)
+  string& sOutDirectory, string& vocName)
 {
   cout << "Creating a database..." << endl;
 
   // load the vocabulary from disk
-  SiftVocabulary voc(sOutDirectory + "/voc.yml.gz");
+  SiftVocabulary voc(sOutDirectory + "/" + vocName);
 
   SiftDatabase db(voc, false, 0); // false = do not use direct index
   // (so ignore the last param)
