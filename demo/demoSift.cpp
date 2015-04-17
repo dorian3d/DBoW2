@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <vector>
+#include <dirent.h>
 
 // DBoW2
 #include "DBoW2.h" // defines Surf64Vocabulary and Surf64Database
@@ -31,20 +32,24 @@ using namespace std;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void loadFeatures(vector<vector<vector<float> > > &features);
+void loadFeatures(vector<vector<vector<float> > > &features,
+  string sDatasetImagesDirectory, vector<string> imagesNames);
+void storeImages(const char* imagesDirectory, vector<string>& imagesNames);
 void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
   int L);
-void testVocCreation(const vector<vector<vector<float> > > &features);
-void testDatabase(const vector<vector<vector<float> > > &features);
+void testVocCreation(const vector<vector<vector<float> > > &features,
+  string& sOutDirectory);
+void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
+  const vector<vector<vector<float> > > &queryFeatures,
+  vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
+  string& sOutDirectory);
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 // number of training images
-const int NIMAGES = 3;
-
-// extended surf gives 128-dimensional vectors
-// const bool EXTENDED_SURF = false;
+int NIMAGES_DATASET;
+int NIMAGES_QUERY;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -56,59 +61,119 @@ void wait()
 
 // ----------------------------------------------------------------------------
 
-int main()
+int main(int argc, char **argv)
 {
-  vector<vector<vector<float> > > features;
-  loadFeatures(features);
+  try {
+    if (argc != 4) throw std::string("Invalid command line.");
+  } catch (const std::string& s) {
+      std::cerr << "Correct usage is: " << '\n'
+      << "./demoSift <Dataset images directory> "
+      << "<Query images directory> "
+      << "<Output directory>" << '\n'
+      << "Example: " << '\n'
+      << "./demoSift ~/images/datasetImages ~/images/queryImages ~/images/output"
+      << std::endl;
 
-  testVocCreation(features);
+      std::cerr << s << std::endl;
+      return EXIT_FAILURE;
+  }
+
+  const char* sDatasetImagesDirectory = argv[1];
+  const char* sQueryImagesDirectory   = argv[2];
+  string sOutDirectory = argv[3];
+
+  vector<string> datasetImagesNames;
+  vector<string> queryImagesNames;
+
+  storeImages(sDatasetImagesDirectory, datasetImagesNames);
+  storeImages(sQueryImagesDirectory  , queryImagesNames);
+
+  NIMAGES_DATASET = datasetImagesNames.size();
+  NIMAGES_QUERY   = queryImagesNames.size();
+
+  cout << "Dataset images : " << endl;
+  for (unsigned int i = 0; i < datasetImagesNames.size(); i++)
+  {
+      cout << "image " << i << " = " << datasetImagesNames[i] << endl;
+  }
+
+  cout << endl;
+
+  cout << "Query images : " << endl;
+  for (unsigned int i = 0; i < queryImagesNames.size(); i++)
+  {
+      cout << "image " << i << " = " << queryImagesNames[i] << endl;
+  }
+
+  cout << endl;
+  cout << "Extracting SIFT features..." << endl;
+
+  vector<vector<vector<float> > > datasetFeatures;
+  vector<vector<vector<float> > > queryFeatures;
+  loadFeatures(datasetFeatures, sDatasetImagesDirectory, datasetImagesNames);
+  loadFeatures(queryFeatures  , sQueryImagesDirectory  , queryImagesNames  );
+
+  testVocCreation(datasetFeatures, sOutDirectory);
 
   wait();
 
-  testDatabase(features);
+  testDatabase(datasetFeatures, queryFeatures, datasetImagesNames,
+    queryImagesNames, sOutDirectory);
 
   return 0;
 }
 
 // ----------------------------------------------------------------------------
 
-void loadFeatures(vector<vector<vector<float> > > &features)
+void storeImages(const char* imagesDirectory, vector<string>& imagesNames)
+{
+  DIR * repertoire = opendir(imagesDirectory);
+
+  if ( repertoire == NULL)
+  {
+    cout << "The images directory" << imagesDirectory << " cannot be found" << endl;
+  }
+  else
+  {
+    struct dirent * ent;
+    while ( (ent = readdir(repertoire)) != NULL)
+    {
+      if ((strncmp(ent->d_name, ".", 1) != 0)
+      && (strncmp(ent->d_name, "..", 2) != 0))
+      {
+        imagesNames.push_back(ent->d_name);
+      }
+    }
+  closedir(repertoire);
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+void loadFeatures(vector<vector<vector<float> > > &features,
+  string sDatasetDirectory, vector<string> imagesNames)
 {
   features.clear();
-  features.reserve(NIMAGES);
+  features.reserve(imagesNames.size());
 
-//  cv::SURF surf(400, 4, 2, EXTENDED_SURF);
   cv::SIFT sift(0, 3, 0.04, 10, 1.6);
 
-//  cout << "Extracting SURF features..." << endl;
-  cout << "Extracting SIFT features..." << endl;
-  for(int i = 0; i < NIMAGES; ++i)
+  for(int i = 0; i < imagesNames.size(); ++i)
   {
     stringstream ss;
-    ss << "images/image" << i << ".jpg";
+    ss << sDatasetDirectory << "/" << imagesNames[i];
 
     cv::Mat image = cv::imread(ss.str(), 0);
     cv::Mat mask;
     vector<cv::KeyPoint> keypoints;
-//    vector<float> descriptors;
     vector<float> descriptors;
-    cv::Mat descriptors2; //(128, 1, cv::DataType<float>::type);
-//    cout << "Compute keypoints and descriptors of images/image" << i << ".jpg"  << endl;
-//    surf(image, mask, keypoints, descriptors);
-    sift(image, mask, keypoints, descriptors2);
+    cv::Mat matDescriptors;
+    sift(image, mask, keypoints, matDescriptors);
 
-    for (unsigned i = 0; i < 128; i++)
-    {
-        descriptors.push_back(descriptors2.at<float>(i,0)); ///255.0f);
-        std::cout << descriptors[i] << " ";
-    }
-    std::cout << std::endl;
+    descriptors.assign((float*)matDescriptors.datastart,
+                       (float*)matDescriptors.dataend);
 
-    cout << "passe la" << endl;
     features.push_back(vector<vector<float> >());
-//    changeStructure(descriptors, features.back(), surf.descriptorSize());
-//    changeStructure(descriptors, features.back(), 128); //sift.descriptorSize());
-    std::cout << "sift.descriptorSize() = " << sift.descriptorSize() << std::endl;
     changeStructure(descriptors, features.back(), sift.descriptorSize());
   }
 }
@@ -130,7 +195,8 @@ void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
 
 // ----------------------------------------------------------------------------
 
-void testVocCreation(const vector<vector<vector<float> > > &features)
+void testVocCreation(const vector<vector<vector<float> > > &features,
+  string& sOutDirectory)
 {
   // branching factor and depth levels
   const int k = 9;
@@ -138,10 +204,9 @@ void testVocCreation(const vector<vector<vector<float> > > &features)
   const WeightingType weight = TF_IDF;
   const ScoringType score = L1_NORM;
 
-//  Surf64Vocabulary voc(k, L, weight, score);
   SiftVocabulary voc(k, L, weight, score);
 
-  cout << "Creating a small " << k << "^" << L << " vocabulary..." << endl;
+  cout << "Creating a " << k << "^" << L << " vocabulary..." << endl;
   voc.create(features);
   cout << "... done!" << endl;
 
@@ -151,10 +216,10 @@ void testVocCreation(const vector<vector<vector<float> > > &features)
   // lets do something with this vocabulary
   cout << "Matching images against themselves (0 low, 1 high): " << endl;
   BowVector v1, v2;
-  for(int i = 0; i < NIMAGES; i++)
+  for(int i = 0; i < NIMAGES_DATASET; i++)
   {
     voc.transform(features[i], v1);
-    for(int j = 0; j < NIMAGES; j++)
+    for(int j = 0; j < NIMAGES_DATASET; j++)
     {
       voc.transform(features[j], v2);
 
@@ -165,21 +230,22 @@ void testVocCreation(const vector<vector<vector<float> > > &features)
 
   // save the vocabulary to disk
   cout << endl << "Saving vocabulary..." << endl;
-  voc.save("small_voc.yml.gz");
+  voc.save(sOutDirectory + "/voc.yml.gz");
   cout << "Done" << endl;
 }
 
 // ----------------------------------------------------------------------------
 
-void testDatabase(const vector<vector<vector<float> > > &features)
+void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
+  const vector<vector<vector<float> > > &queryFeatures,
+  vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
+  string& sOutDirectory)
 {
-  cout << "Creating a small database..." << endl;
+  cout << "Creating a database..." << endl;
 
   // load the vocabulary from disk
-//  Surf64Vocabulary voc("small_voc.yml.gz");
-  SiftVocabulary voc("small_voc.yml.gz");
+  SiftVocabulary voc(sOutDirectory + "/voc.yml.gz");
 
-//  Surf64Database db(voc, false, 0); // false = do not use direct index
   SiftDatabase db(voc, false, 0); // false = do not use direct index
   // (so ignore the last param)
   // The direct index is useful if we want to retrieve the features that
@@ -187,9 +253,9 @@ void testDatabase(const vector<vector<vector<float> > > &features)
   // db creates a copy of the vocabulary, we may get rid of "voc" now
 
   // add images to the database
-  for(int i = 0; i < NIMAGES; i++)
+  for(int i = 0; i < NIMAGES_DATASET; i++)
   {
-    db.add(features[i]);
+    db.add(datasetFeatures[i]);
   }
 
   cout << "... done!" << endl;
@@ -199,15 +265,21 @@ void testDatabase(const vector<vector<vector<float> > > &features)
   // and query the database
   cout << "Querying the database: " << endl;
 
+  int nbBestMatchesToKeep = 4;
+
   QueryResults ret;
-  for(int i = 0; i < NIMAGES; i++)
+  for(int i = 0; i < NIMAGES_QUERY; i++)
   {
-    db.query(features[i], ret, 4);
+    db.query(queryFeatures[i], ret, nbBestMatchesToKeep);
 
     // ret[0] is always the same image in this case, because we added it to the
     // database. ret[1] is the second best match.
 
-    cout << "Searching for Image " << i << ". " << ret << endl;
+    for (int j = 0; j < nbBestMatchesToKeep; j++)
+    {
+      cout << "Searching for Image " << i << ": " << queryImagesNames[i] << "... Found : " << datasetImagesNames[ret[j].Id] << " with score " << ret[j].Score << endl;
+    }
+    cout << endl;
   }
 
   cout << endl;
@@ -215,13 +287,12 @@ void testDatabase(const vector<vector<vector<float> > > &features)
   // we can save the database. The created file includes the vocabulary
   // and the entries added
   cout << "Saving database..." << endl;
-  db.save("small_db.yml.gz");
+  db.save(sOutDirectory + "/db.yml.gz");
   cout << "... done!" << endl;
 
   // once saved, we can load it again
   cout << "Retrieving database once again..." << endl;
-//  Surf64Database db2("small_db.yml.gz");
-  SiftDatabase db2("small_db.yml.gz");
+  SiftDatabase db2(sOutDirectory + "/db.yml.gz");
   cout << "... done! This is: " << endl << db2 << endl;
 }
 
