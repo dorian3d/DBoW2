@@ -23,7 +23,6 @@
 #include <opencv/highgui.h>
 #if CV24
 #include <opencv2/nonfree/features2d.hpp>
-#include <opencv2/core.hpp>
 #include <opencv2/core/core.hpp>
 #endif
 
@@ -63,59 +62,63 @@ void wait()
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+// opencv v3.0
+#if CV_VERSION_EPOCH < 3
 const char* keys =
-  "{help h usage ? |   | print this message                              }"
-  "{@pathToDataset  |   | path to the directory containing dataset images }"
-  "{@pathToQueries  |   | path to the directory containing query images   }"
-  "{@pathToOutput   |   | path to the output directory                    }"
-  "{vocName        |   | name of the vocabulary file                     }"
+  "{h | help	| false  | print this message                              }"
+  "{d | dataset |   | path to the directory containing dataset images }"
+  "{q | query	|   | path to the directory containing query images   }"
+  "{o | output  |   | path to the output directory                    }"
+  "{v | vocName |   | name of the vocabulary file                     }"
+  "{k |         | 9 | max number of sons of each node                 }"
+  "{L |         | 3 | max depth of the vocabulary tree                }"
+;
+#else
+const char* keys =
+  "{help h |   | print this message                              }"
+  "{d dataset  |   | path to the directory containing dataset images }"
+  "{q queries  |   | path to the directory containing query images   }"
+  "{o output   |   | path to the output directory                    }"
+  "{v vocName        |   | name of the vocabulary file                     }"
   "{k              | 9 | max number of sons of each node                 }"
   "{L              | 3 | max depth of the vocabulary tree                }"
 ;
-
+#endif
 // ----------------------------------------------------------------------------
 
 int main(int argc, const char **argv)
 {
-  try {
-    if (argc < 5) throw std::string("Invalid command line.");
-  } catch (const std::string& s) {
-      std::cerr << "Correct usage is: " << '\n'
-      << "./demoSift <Dataset images directory> "
-      << "<Query images directory> "
-      << "<Output directory>" << '\n'
-      << "<Name of the vocabulary file in the output directory>" << '\n'
-      << "<k value (max number of sons of each node)>" << '\n'
-      << "<L value (max depth of the vocabulary tree)>" << '\n'
-      << "Example: " << '\n'
-      << "./demoSift ~/images/datasetImages ~/images/queryImages voc.yml.gz 10 6"
-      << std::endl;
+	cv::CommandLineParser parser(argc, argv, keys);
+#if CV_VERSION_EPOCH < 3
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
-  }
-//  cv::CommandLineParser parser(argc, argv, keys);
-//  string sDatasetImagesDirectory = parser.get<string>("pathToDataset"); //argv[1];
-//  string sQueryImagesDirectory   = parser.get<string>("pathToQueries"); //argv[2];
-//  string sOutDirectory = parser.get<string>("pathToOutput"); //argv[3];
-//  string vocName = parser.get<string>("vocName"); //argv[4];
+	if( parser.get<bool>( "h" ) || parser.get<bool>( "help" ) )
+	{
+	  parser.printParams();
+	  return EXIT_SUCCESS;
+	}
+#else
+	parser.about("demoSift v1.0.0");
+	if (parser.has("help"))
+	{
+		parser.printMessage();
+		return EXIT_SUCCESS;
+	}
+	if (!parser.check())
+	{
+		parser.printErrors();
+		return EXIT_FAILURE;
+	}
+#endif
 
-  string sDatasetImagesDirectory = argv[1];
-  string sQueryImagesDirectory   = argv[2];
-  string sOutDirectory = argv[3];
-  string vocName = argv[4];
-  int k = 3;
-  int L = 9;
+	parser.printParams();
+	string sDatasetImagesDirectory = parser.get<string>("d");
+	string sQueryImagesDirectory   = parser.get<string>("q");
+	string sOutDirectory = parser.get<string>("o");
+	string vocName = parser.get<string>("vocName");
 
-  if (argc >= 6)
-  {
-    k = atoi(argv[5]);
-  }
 
-  if (argc >= 7)
-  {
-    L = atoi(argv[6]);
-  }
+	int k = parser.get<int>("k");
+	int L = parser.get<int>("L");
 
   std::cout << "path to dataset is " << sDatasetImagesDirectory << std::endl;
 
