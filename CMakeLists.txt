@@ -17,9 +17,10 @@ set(SRCS
 
 find_package(OpenCV REQUIRED)
 find_package(DLib REQUIRED)
+find_package(Boost REQUIRED)
 
 if(BUILD_DBoW2)
-	include_directories(include/DBoW2/ ${OpenCV_INCLUDE_DIRS} ${DLIB_INCLUDE_DIRS})
+	include_directories(include/DBoW2/ ${OpenCV_INCLUDE_DIRS} ${DLIB_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 	add_library(${PROJECT_NAME} SHARED ${SRCS})
 	target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${DLIB_LIBRARIES})
 endif(BUILD_DBoW2)
