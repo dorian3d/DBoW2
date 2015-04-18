@@ -62,53 +62,27 @@ void wait()
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-// opencv v3.0
-#if CV_VERSION_EPOCH < 3
+
 const char* keys =
-  "{h | help	| false  | print this message                              }"
-  "{d | dataset |   | path to the directory containing dataset images }"
-  "{q | query	|   | path to the directory containing query images   }"
-  "{o | output  |   | path to the output directory                    }"
-  "{v | vocName |   | name of the vocabulary file                     }"
-  "{k |         | 9 | max number of sons of each node                 }"
-  "{L |         | 3 | max depth of the vocabulary tree                }"
+  "{h | help	| false  | print this message										}"
+  "{d | dataset | images/image  | path to the directory containing dataset images	}"
+  "{q | query	| images/image  | path to the directory containing query images		}"
+  "{o | output  | images/image  | path to the output directory						}"
+  "{v | vocName | small_voc.yml.gz  | name of the vocabulary file                   }"
+  "{k |         | 9 | max number of sons of each node								}"
+  "{L |         | 3 | max depth of the vocabulary tree								}"
 ;
-#else
-const char* keys =
-  "{help h |   | print this message                              }"
-  "{d dataset  |   | path to the directory containing dataset images }"
-  "{q queries  |   | path to the directory containing query images   }"
-  "{o output   |   | path to the output directory                    }"
-  "{v vocName        |   | name of the vocabulary file                     }"
-  "{k              | 9 | max number of sons of each node                 }"
-  "{L              | 3 | max depth of the vocabulary tree                }"
-;
-#endif
+
 // ----------------------------------------------------------------------------
 
 int main(int argc, const char **argv)
 {
 	cv::CommandLineParser parser(argc, argv, keys);
-#if CV_VERSION_EPOCH < 3
-
 	if( parser.get<bool>( "h" ) || parser.get<bool>( "help" ) )
 	{
 	  parser.printParams();
 	  return EXIT_SUCCESS;
 	}
-#else
-	parser.about("demoSift v1.0.0");
-	if (parser.has("help"))
-	{
-		parser.printMessage();
-		return EXIT_SUCCESS;
-	}
-	if (!parser.check())
-	{
-		parser.printErrors();
-		return EXIT_FAILURE;
-	}
-#endif
 
 	parser.printParams();
 	string sDatasetImagesDirectory = parser.get<string>("d");
