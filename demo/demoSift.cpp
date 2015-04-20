@@ -64,10 +64,10 @@ void wait()
 
 
 const char* keys =
-  "{h | help	| false  | print this message										}"
-  "{d | dataset | images/image  | path to the directory containing dataset images	}"
-  "{q | query	| images/image  | path to the directory containing query images		}"
-  "{o | output  | images/image  | path to the output directory						}"
+  "{h | help	| false  | print this message					2					}"
+  "{d | dataset | images/  | path to the directory containing dataset images	}"
+  "{q | query	| images/  | path to the directory containing query images		}"
+  "{o | output  | ./       | path to the output directory						}"
   "{v | vocName | small_voc.yml.gz  | name of the vocabulary file                   }"
   "{k |         | 9 | max number of sons of each node								}"
   "{L |         | 3 | max depth of the vocabulary tree								}"
