@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <dirent.h>
+#include <locale>
 
 // DBoW2
 #include "DBoW2.h" // defines Surf64Vocabulary and Surf64Database
@@ -44,13 +45,14 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
   const vector<vector<vector<float> > > &queryFeatures,
   vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
   string& sOutDirectory, string& vocName);
-
+bool fileAlreadyExists(string& fileName, string& sDirectory);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 // number of training images
 int NIMAGES_DATASET;
 int NIMAGES_QUERY;
+
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -62,39 +64,35 @@ void wait()
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-
 const char* keys =
-  "{h | help	| false  | print this message										}"
-  "{d | dataset | images/  | path to the directory containing dataset images	}"
-  "{q | query	| images/  | path to the directory containing query images		}"
-  "{o | output  | ./       | path to the output directory						}"
-  "{v | vocName | small_voc.yml.gz  | name of the vocabulary file                   }"
-  "{k |         | 9 | max number of sons of each node								}"
-  "{L |         | 3 | max depth of the vocabulary tree								}"
+  "{h | help	| false  | print this message                               }"
+  "{d | dataset | images/  | path to the directory containing dataset images}"
+  "{q | query	| images/  | path to the directory containing query images  }"
+  "{o | output  | ./       | path to the output directory                   }"
+  "{v | vocName | small_voc.yml.gz  | name of the vocabulary file           }"
+  "{k |         | 9 | max number of sons of each node                       }"
+  "{L |         | 3 | max depth of the vocabulary tree                      }"
 ;
 
 // ----------------------------------------------------------------------------
 
 int main(int argc, const char **argv)
 {
-	cv::CommandLineParser parser(argc, argv, keys);
-	if( parser.get<bool>( "h" ) || parser.get<bool>( "help" ) )
-	{
-	  parser.printParams();
-	  return EXIT_SUCCESS;
-	}
+  cv::CommandLineParser parser(argc, argv, keys);
+  if( parser.get<bool>( "h" ) || parser.get<bool>( "help" ) )
+  {
+    parser.printParams();
+    return EXIT_SUCCESS;
+  }
 
-	parser.printParams();
-	string sDatasetImagesDirectory = parser.get<string>("d");
-	string sQueryImagesDirectory   = parser.get<string>("q");
-	string sOutDirectory = parser.get<string>("o");
-	string vocName = parser.get<string>("vocName");
+  parser.printParams();
+  string sDatasetImagesDirectory = parser.get<string>("d");
+  string sQueryImagesDirectory   = parser.get<string>("q");
+  string sOutDirectory = parser.get<string>("o");
+  string vocName = parser.get<string>("vocName");
 
-
-	int k = parser.get<int>("k");
-	int L = parser.get<int>("L");
-
-  std::cout << "path to dataset is " << sDatasetImagesDirectory << std::endl;
+  int k = parser.get<int>("k");
+  int L = parser.get<int>("L");
 
   vector<string> datasetImagesNames;
   vector<string> queryImagesNames;
@@ -105,7 +103,7 @@ int main(int argc, const char **argv)
   NIMAGES_DATASET = datasetImagesNames.size();
   NIMAGES_QUERY   = queryImagesNames.size();
 
-  cout << "Dataset images : " << endl;
+  cout << "Dataset images: " << endl;
   for (unsigned int i = 0; i < datasetImagesNames.size(); i++)
   {
       cout << "image " << i << " = " << datasetImagesNames[i] << endl;
@@ -113,7 +111,7 @@ int main(int argc, const char **argv)
 
   cout << endl;
 
-  cout << "Query images : " << endl;
+  cout << "Query images: " << endl;
   for (unsigned int i = 0; i < queryImagesNames.size(); i++)
   {
       cout << "image " << i << " = " << queryImagesNames[i] << endl;
@@ -121,7 +119,6 @@ int main(int argc, const char **argv)
 
   cout << endl;
   cout << "Extracting SIFT features..." << endl;
-
   vector<vector<vector<float> > > datasetFeatures;
   vector<vector<vector<float> > > queryFeatures;
   loadFeatures(datasetFeatures, sDatasetImagesDirectory, datasetImagesNames);
@@ -141,21 +138,36 @@ int main(int argc, const char **argv)
 
 void storeImages(const char* imagesDirectory, vector<string>& imagesNames)
 {
+  // image extensions
+  vector<string> extensions;
+  extensions.push_back("png");
+  extensions.push_back("jpg");
+
   DIR * repertoire = opendir(imagesDirectory);
 
   if ( repertoire == NULL)
   {
-    cout << "The images directory : " << imagesDirectory << " cannot be found" << endl;
+    cout << "The images directory: " << imagesDirectory
+      << " cannot be found" << endl;
   }
   else
   {
     struct dirent * ent;
     while ( (ent = readdir(repertoire)) != NULL)
     {
-      if ((strncmp(ent->d_name, ".", 1) != 0)
-      && (strncmp(ent->d_name, "..", 2) != 0))
+      string file_name = ent->d_name;
+      string extension = file_name.substr(file_name.find_last_of(".") +1);
+      locale loc;
+      for (std::string::size_type j = 0; j < extension.size(); j++)
       {
-        imagesNames.push_back(ent->d_name);
+        extension[j] = std::tolower(extension[j], loc);
+      }
+      for (unsigned int i = 0; i < extensions.size(); i++)
+      {
+        if (extension == extensions[i])
+        {
+          imagesNames.push_back(file_name);
+        }
       }
     }
   closedir(repertoire);
@@ -170,7 +182,7 @@ void loadFeatures(vector<vector<vector<float> > > &features,
   features.clear();
   features.reserve(imagesNames.size());
 
-  cv::SIFT sift(0, 3, 0.04, 10, 1.6);
+  cv::SIFT sift(15000, 3, 0.04, 10, 1.6);
 
   for(int i = 0; i < imagesNames.size(); ++i)
   {
@@ -183,6 +195,8 @@ void loadFeatures(vector<vector<vector<float> > > &features,
     vector<float> descriptors;
     cv::Mat matDescriptors;
     sift(image, mask, keypoints, matDescriptors);
+    cout << keypoints.size() << " keypoints found on " << sDatasetDirectory
+      << "/" << imagesNames[i] << endl;
 
     descriptors.assign((float*)matDescriptors.datastart,
                        (float*)matDescriptors.dataend);
@@ -212,25 +226,9 @@ void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
 void testVocCreation(const vector<vector<vector<float> > > &features,
   string& sOutDirectory, string& vocName, int k, int L)
 {
-  DIR * repertoire = opendir(sOutDirectory.c_str());
-
-  if (repertoire == NULL)
+  if (fileAlreadyExists(vocName, sOutDirectory))
   {
-    cout << "The output directory : " << sOutDirectory << " cannot be found" << endl;
-  }
-  else
-  {
-    struct dirent * ent;
-    while ( (ent = readdir(repertoire)) != NULL)
-    {
-      if (strncmp(ent->d_name, vocName.c_str(), vocName.size()) == 0)
-      {
-        cout << "The vocabulary file " << vocName
-          << " already exists, there is no need to recreate it" << endl;
-        return;
-      }
-    }
-  closedir(repertoire);
+    return;
   }
 
   // branching factor and depth levels
@@ -310,7 +308,9 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
 
     for (int j = 0; j < nbBestMatchesToKeep; j++)
     {
-      cout << "Searching for Image " << i << ": " << queryImagesNames[i] << "... Found : " << datasetImagesNames[ret[j].Id] << " with score " << ret[j].Score << endl;
+      cout << "Searching for Image " << i << ": " << queryImagesNames[i]
+        << "... Found: " << datasetImagesNames[ret[j].Id]
+        << " with score " << ret[j].Score << endl;
     }
     cout << endl;
   }
@@ -331,4 +331,29 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
 
 // ----------------------------------------------------------------------------
 
+bool fileAlreadyExists(string& fileName, string& sDirectory)
+{
+  DIR * repertoire = opendir(sDirectory.c_str());
+
+  if (repertoire == NULL)
+  {
+    cout << "The output directory: " << sDirectory
+      << " cannot be found" << endl;
+  }
+  else
+  {
+    struct dirent * ent;
+    while ( (ent = readdir(repertoire)) != NULL)
+    {
+      if (strncmp(ent->d_name, fileName.c_str(), fileName.size()) == 0)
+      {
+        cout << "The file " << fileName
+          << " already exists, there is no need to recreate it" << endl;
+        return true;
+      }
+    }
+  closedir(repertoire);
+  }
+  return false;
+}
 
