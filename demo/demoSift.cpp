@@ -64,7 +64,7 @@ void wait()
 
 
 const char* keys =
-  "{h | help	| false  | print this message					2					}"
+  "{h | help	| false  | print this message										}"
   "{d | dataset | images/  | path to the directory containing dataset images	}"
   "{q | query	| images/  | path to the directory containing query images		}"
   "{o | output  | ./       | path to the output directory						}"
@@ -246,7 +246,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
   cout << "Vocabulary information: " << endl
   << voc << endl << endl;
 
-  // lets do something with this vocabulary
+  // let's do something with this vocabulary
   cout << "Matching images against themselves (0 low, 1 high): " << endl;
   BowVector v1, v2;
   for(int i = 0; i < NIMAGES_DATASET; i++)
