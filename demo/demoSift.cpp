@@ -27,6 +27,8 @@
 #include <opencv2/core/core.hpp>
 #endif
 
+// Execution Time
+#include <sys/time.h>
 
 using namespace DBoW2;
 using namespace DUtils;
@@ -301,7 +303,11 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
   QueryResults ret;
   for(int i = 0; i < NIMAGES_QUERY; i++)
   {
+    struct timeval tbegin, tend;
+    gettimeofday(&tbegin, NULL);
     db.query(queryFeatures[i], ret, nbBestMatchesToKeep);
+    gettimeofday(&tend,NULL);
+    double texec = ((double) (1000*(tend.tv_sec - tbegin.tv_sec) + (tend.tv_usec - tbegin.tv_usec)/1000)/1000.);
 
     // ret[0] is always the same image in this case, because we added it to the
     // database. ret[1] is the second best match.
@@ -312,6 +318,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         << "... Found: " << datasetImagesNames[ret[j].Id]
         << " with score " << ret[j].Score << endl;
     }
+    cout << "in " << texec << " seconds" <<  endl;
     cout << endl;
   }
 
