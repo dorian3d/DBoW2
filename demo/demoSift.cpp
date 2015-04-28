@@ -37,7 +37,8 @@ using namespace std;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void loadFeatures(vector<vector<vector<float> > > &features,
-  string sDatasetImagesDirectory, vector<string> imagesNames);
+  string sDatasetImagesDirectory, string sOutDirectory,
+  vector<string> imagesNames);
 void storeImages(const char* imagesDirectory, vector<string>& imagesNames);
 void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
   int L);
@@ -123,8 +124,8 @@ int main(int argc, const char **argv)
   cout << "Extracting SIFT features..." << endl;
   vector<vector<vector<float> > > datasetFeatures;
   vector<vector<vector<float> > > queryFeatures;
-  loadFeatures(datasetFeatures, sDatasetImagesDirectory, datasetImagesNames);
-  loadFeatures(queryFeatures  , sQueryImagesDirectory  , queryImagesNames  );
+  loadFeatures(datasetFeatures, sDatasetImagesDirectory, sOutDirectory, datasetImagesNames);
+  loadFeatures(queryFeatures  , sQueryImagesDirectory  , sOutDirectory, queryImagesNames  );
 
   testVocCreation(datasetFeatures, sOutDirectory, vocName, k, L);
 
@@ -179,7 +180,7 @@ void storeImages(const char* imagesDirectory, vector<string>& imagesNames)
 // ----------------------------------------------------------------------------
 
 void loadFeatures(vector<vector<vector<float> > > &features,
-  string sDatasetDirectory, vector<string> imagesNames)
+  string sDatasetDirectory, string sOutDirectory, vector<string> imagesNames)
 {
   features.clear();
   features.reserve(imagesNames.size());
@@ -191,17 +192,46 @@ void loadFeatures(vector<vector<vector<float> > > &features,
     stringstream ss;
     ss << sDatasetDirectory << "/" << imagesNames[i];
 
-    cv::Mat image = cv::imread(ss.str(), 0);
-    cv::Mat mask;
-    vector<cv::KeyPoint> keypoints;
+    string descFileName = imagesNames[i].substr(0, imagesNames[i].find_last_of(".")) + ".desc";
     vector<float> descriptors;
-    cv::Mat matDescriptors;
-    sift(image, mask, keypoints, matDescriptors);
-    cout << keypoints.size() << " keypoints found on " << sDatasetDirectory
-      << "/" << imagesNames[i] << endl;
 
-    descriptors.assign((float*)matDescriptors.datastart,
-                       (float*)matDescriptors.dataend);
+    if (!fileAlreadyExists(descFileName, sOutDirectory))
+    {
+      cout << "File " << sOutDirectory + "/" + descFileName << " does not exist" << endl;
+      BinaryFile binFile(sOutDirectory + "/" + descFileName, WRITE);
+      cv::Mat image = cv::imread(ss.str(), 0);
+      cv::Mat mask;
+      vector<cv::KeyPoint> keypoints;
+      cv::Mat matDescriptors;
+      sift(image, mask, keypoints, matDescriptors);
+      cout << keypoints.size() << " keypoints found on " << sDatasetDirectory
+        << "/" << imagesNames[i] << endl;
+
+      descriptors.assign((float*)matDescriptors.datastart,
+                         (float*)matDescriptors.dataend);
+
+      std::cout << "descriptor size is " << descriptors.size()/128 << std::endl;
+      binFile << static_cast<int>(descriptors.size()/128);
+      for (unsigned int j = 0; j < descriptors.size(); j++)
+      {
+        binFile << static_cast<char>(descriptors[j]);
+      }
+    }
+    else // descFileName already exists, just load it
+    {
+      BinaryFile binFile;
+      binFile.OpenForReading(sOutDirectory + "/" + descFileName);
+      int descriptorSize;
+      char elt;
+      binFile >> descriptorSize;
+      std::cout << "descriptor size is " << descriptorSize << std::endl;
+      descriptors.resize(128*descriptorSize);
+      for (unsigned int j = 0; j < 128*descriptorSize; j++)
+      {
+        binFile >> elt;
+        descriptors[j] = elt;
+      }
+    }
 
     features.push_back(vector<vector<float> >());
     changeStructure(descriptors, features.back(), sift.descriptorSize());
@@ -235,7 +265,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 
   // branching factor and depth levels
   const WeightingType weight = TF_IDF;
-  const ScoringType score = L1_NORM;
+  const ScoringType score = L2_NORM;
 
   SiftVocabulary voc(k, L, weight, score);
 
