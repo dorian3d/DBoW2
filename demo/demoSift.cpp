@@ -214,22 +214,21 @@ void loadFeatures(vector<vector<vector<float> > > &features,
       binFile << static_cast<int>(descriptors.size()/128);
       for (unsigned int j = 0; j < descriptors.size(); j++)
       {
-        binFile << static_cast<char>(descriptors[j]);
+        binFile << descriptors[j];
       }
+      binFile.Close();
     }
     else // descFileName already exists, just load it
     {
       BinaryFile binFile;
       binFile.OpenForReading(sOutDirectory + "/" + descFileName);
       int descriptorSize;
-      char elt;
       binFile >> descriptorSize;
       std::cout << "descriptor size is " << descriptorSize << std::endl;
       descriptors.resize(128*descriptorSize);
       for (unsigned int j = 0; j < 128*descriptorSize; j++)
       {
-        binFile >> elt;
-        descriptors[j] = elt;
+        binFile >> descriptors[j];
       }
     }
 
@@ -337,7 +336,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
     gettimeofday(&tbegin, NULL);
     db.query(queryFeatures[i], ret, nbBestMatchesToKeep);
     gettimeofday(&tend,NULL);
-    double texec = ((double) (1000*(tend.tv_sec - tbegin.tv_sec) + (tend.tv_usec - tbegin.tv_usec)/1000)/1000.);
+    double texec = (double) (1000.0*(tend.tv_sec - tbegin.tv_sec) + (tend.tv_usec - tbegin.tv_usec)/1000.0);
 
     // ret[0] is always the same image in this case, because we added it to the
     // database. ret[1] is the second best match.
@@ -348,7 +347,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         << "... Found: " << datasetImagesNames[ret[j].Id]
         << " with score " << ret[j].Score << endl;
     }
-    cout << "in " << texec << " seconds" <<  endl;
+    cout << "in " << texec << " ms" <<  endl;
     cout << endl;
   }
 
