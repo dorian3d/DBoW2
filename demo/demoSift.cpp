@@ -458,7 +458,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
                 << "... Found: " << datasetImagesNames[ret[j].Id]
                 << " with score " << ret[j].Score << endl;
         }
-        cout << "in " << texec << " ms" <<  endl;
+        cout << " in " << texec << " ms" <<  endl;
         cout << endl;
     }
 
