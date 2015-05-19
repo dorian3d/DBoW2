@@ -102,7 +102,7 @@ int main(int argc, const char **argv)
     int L = parser.get<int>("L");
 
     bool root = parser.get<bool>("r");
-  const int numImagesQuery = parser.get<int>("R");
+	const int numImagesQuery = parser.get<int>("R");
 
     vector<string> datasetImagesNames;
     vector<string> queryImagesNames;
@@ -139,7 +139,7 @@ int main(int argc, const char **argv)
     wait();
 
     testDatabase(datasetFeatures, queryFeatures, datasetImagesNames,
-            queryImagesNames, sOutDirectory, vocName);
+			queryImagesNames, sOutDirectory, vocName, numImagesQuery);
 
     return 0;
 }
