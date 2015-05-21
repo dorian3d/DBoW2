@@ -83,8 +83,8 @@ vector<float> readDescFromBinFile(const char* path)
 
 bool loadFeatures(vector<vector<vector<float> > > &features,
         string sDatasetImagesDirectory, string sOutDirectory,
-        vector<string> imagesNames, bool root);
-void storeImages(const char* imagesDirectory, vector<string>& imagesNames);
+        vector<string> imagesNames, bool root, bool justDesc);
+void storeImages(const char* imagesDirectory, vector<string>& imagesNames, bool desc);
 void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
         int L);
 void testVocCreation(const vector<vector<vector<float> > > &features,
@@ -146,12 +146,18 @@ int main(int argc, const char **argv)
     const int numImagesQuery = parser.get<int>("n");
 
     bool root = parser.get<bool>("r");
+    bool justDesc = false;
 
     vector<string> datasetImagesNames;
     vector<string> queryImagesNames;
 
-    storeImages(sDatasetImagesDirectory.c_str(), datasetImagesNames);
-    storeImages(sQueryImagesDirectory.c_str()  , queryImagesNames);
+    storeImages(sDatasetImagesDirectory.c_str(), datasetImagesNames, false);
+    if (datasetImagesNames.size() == 0)
+    {
+        justDesc = true;
+        storeImages(sOutDirectory.c_str(), datasetImagesNames, true);
+    }
+    storeImages(sQueryImagesDirectory.c_str()  , queryImagesNames, false);
 
     NIMAGES_DATASET = datasetImagesNames.size();
     NIMAGES_QUERY   = queryImagesNames.size();
@@ -174,8 +180,8 @@ int main(int argc, const char **argv)
     cout << "Extracting SIFT features..." << endl;
     vector<vector<vector<float> > > datasetFeatures;
     vector<vector<vector<float> > > queryFeatures;
-    bool isOK = loadFeatures(datasetFeatures, sDatasetImagesDirectory, sOutDirectory, datasetImagesNames, root);
-    loadFeatures(queryFeatures  , sQueryImagesDirectory  , sOutDirectory, queryImagesNames, root  );
+    bool isOK = loadFeatures(datasetFeatures, sDatasetImagesDirectory, sOutDirectory, datasetImagesNames, root, justDesc);
+    loadFeatures(queryFeatures  , sQueryImagesDirectory  , sOutDirectory, queryImagesNames, root, false);
 
     testVocCreation(datasetFeatures, sOutDirectory, vocName, k, L, isOK);
 
@@ -189,12 +195,19 @@ int main(int argc, const char **argv)
 
 // ----------------------------------------------------------------------------
 
-void storeImages(const char* imagesDirectory, vector<string>& imagesNames)
+void storeImages(const char* imagesDirectory, vector<string>& imagesNames, bool desc)
 {
     // image extensions
     vector<string> extensions;
-    extensions.push_back("png");
-    extensions.push_back("jpg");
+    if (desc)
+    {
+        extensions.push_back("desc");
+    }
+    else
+    {
+        extensions.push_back("png");
+        extensions.push_back("jpg");
+    }
 
     DIR * repertoire = opendir(imagesDirectory);
 
@@ -231,7 +244,7 @@ void storeImages(const char* imagesDirectory, vector<string>& imagesNames)
 
 bool loadFeatures(vector<vector<vector<float> > > &features,
         string sDatasetDirectory, string sOutDirectory, vector<string> imagesNames,
-        bool root)
+        bool root, bool justDesc)
 {
     bool goodDescType = true;
     features.clear();
@@ -281,7 +294,7 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
                     }
                 }
             }
-            writeDescToBinFile(descFileName, descriptors);
+            writeDescToBinFile(sOutDirectory+"/"+descFileName, descriptors);
         }
 
         vector<float> firstDescriptor;
@@ -302,7 +315,6 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
         {
             goodDescType = false;
         }
-
         if (loadFile) // descFileName already exists, just load it
         {
             string path = sOutDirectory + "/" + descFileName;
