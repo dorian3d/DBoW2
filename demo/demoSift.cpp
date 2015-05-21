@@ -38,6 +38,49 @@ using namespace std;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+bool writeDescToBinFile(string filename, vector<float> descriptors)
+{
+    ofstream file(filename.c_str(), ofstream::out | ofstream::binary);
+    // write the number of descriptors
+    const size_t numDesc = descriptors.size()/128;
+    file.write((const char*) &numDesc, sizeof(std::size_t));
+    for (int i = 0; i < descriptors.size(); ++i)
+    {
+        file.write( (char*) &descriptors[i], sizeof(float));
+    }
+    bool isOk = file.good();
+    file.close();
+    return isOk;
+}
+
+vector<float> readDescFromBinFile(const char* path)
+{
+    fstream fs;
+    size_t ndesc;
+
+    // Open file and get the number of descriptors
+    fs.open(path, ios::in | ios::binary);
+
+    // get the number of descriptors
+    fs.read((char*) &ndesc, sizeof(size_t));
+
+    vector<float> res;
+
+    // Fill the matrix in the air
+    for (int i = 0; i < ndesc*128; i++)
+    {
+        float cur;
+        fs.read((char*) &cur, sizeof(float));
+        res.push_back(cur);
+    }
+
+    // Close file and return
+    fs.close();
+    return res;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 bool loadFeatures(vector<vector<vector<float> > > &features,
         string sDatasetImagesDirectory, string sOutDirectory,
         vector<string> imagesNames, bool root);
@@ -207,7 +250,6 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
         if (!fileAlreadyExists(descFileName, sOutDirectory))
         {
             cout << "File " << sOutDirectory + "/" + descFileName << " does not exist" << endl;
-            BinaryFile binFile(sOutDirectory + "/" + descFileName, WRITE);
             cv::Mat image = cv::imread(ss.str(), 0);
             cv::Mat mask;
             vector<cv::KeyPoint> keypoints;
@@ -221,7 +263,6 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
 
             std::cout << "descriptor size is " << descriptors.size()/128 << std::endl;
             int descriptorSize = static_cast<int>(descriptors.size()/128);
-            binFile << descriptorSize;
 
             if (root)
             {
@@ -238,24 +279,12 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
                     }
                 }
             }
+            writeDescToBinFile(descFileName, descriptors);
+        }
 
-            for (unsigned int j = 0; j < descriptors.size(); ++j)
-            {
-                binFile << descriptors[j];
-            }
-            binFile.Close();
-        }
-        BinaryFile checkRoot;
-        checkRoot.OpenForReading(sOutDirectory + "/" + descFileName);
-        int descriptorSize;
-        checkRoot >> descriptorSize;
         vector<float> firstDescriptor;
-        firstDescriptor.resize(128);
-        for (unsigned int j = 0; j < 128; ++j)
-        {
-            checkRoot >> firstDescriptor[j];
-        }
-        checkRoot.Close();
+        string path = sOutDirectory + "/" + descFileName;
+        firstDescriptor = readDescFromBinFile(path.c_str());
         float firstDescriptorNorm = 0;
 
         for (unsigned int k = 0; k < 128; k++)
@@ -274,17 +303,9 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
 
         if (loadFile) // descFileName already exists, just load it
         {
-            BinaryFile binFile;
-            binFile.OpenForReading(sOutDirectory + "/" + descFileName);
-            int descriptorSize;
-            binFile >> descriptorSize;
-            std::cout << "Descriptor size is " << descriptorSize << std::endl;
-            descriptors.resize(128*descriptorSize);
-            for (unsigned int j = 0; j < 128*descriptorSize; ++j)
-            {
-                binFile >> descriptors[j];
-            }
-            binFile.Close();
+            string path = sOutDirectory + "/" + descFileName;
+            descriptors = readDescFromBinFile(path.c_str());
+            std::cout << "Descriptor size is " << descriptors.size()/128 << std::endl;
         }
         else // a rootSift descriptor file has been loaded with -r false
              // or a sift descriptor file has been loaded with -r true
@@ -302,7 +323,6 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
                      << " represents a rootSift descriptor but the program has been called with sift descriptors option : it will be recomputed"
                      << endl;
             }
-            BinaryFile binFile(sOutDirectory + "/" + descFileName, WRITE);
             cv::Mat image = cv::imread(ss.str(), 0);
             cv::Mat mask;
             vector<cv::KeyPoint> keypoints;
@@ -316,7 +336,6 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
 
             std::cout << "descriptor size is " << descriptors.size()/128 << std::endl;
             int descriptorSize = static_cast<int>(descriptors.size()/128);
-            binFile << descriptorSize;
 
             if (root)
             {
@@ -333,12 +352,7 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
                     }
                 }
             }
-
-            for (unsigned int j = 0; j < descriptors.size(); ++j)
-            {
-                binFile << descriptors[j];
-            }
-            binFile.Close();
+            writeDescToBinFile(descFileName, descriptors);
 
         }
 
