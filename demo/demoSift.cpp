@@ -92,7 +92,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         const vector<vector<vector<float> > > &queryFeatures,
         vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-        string& sOutDirectory, string& vocName);
+        string& sOutDirectory, string& vocName, const int numImagesQuery);
 bool fileAlreadyExists(string& fileName, string& sDirectory);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -113,14 +113,15 @@ void wait()
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 const char* keys =
-"{h | help	| false  | print this message                               }"
+"{h | help	| false  | print this message                                 }"
 "{d | dataset | images/  | path to the directory containing dataset images}"
-"{q | query	| images/  | path to the directory containing query images  }"
+"{q | query	| images/  | path to the directory containing query images    }"
 "{o | output  | ./       | path to the output directory                   }"
 "{v | vocName | small_voc.yml.gz  | name of the vocabulary file           }"
 "{k |         | 9 | max number of sons of each node                       }"
 "{L |         | 3 | max depth of the vocabulary tree                      }"
 "{r | rootSift| false | use rootSift instead of SIFT                      }"
+"{n | nBest   | 4 | number of best matches to keep                        }"
 ;
 
 // ----------------------------------------------------------------------------
@@ -142,6 +143,7 @@ int main(int argc, const char **argv)
 
     int k = parser.get<int>("k");
     int L = parser.get<int>("L");
+    const int numImagesQuery = parser.get<int>("n");
 
     bool root = parser.get<bool>("r");
 
@@ -180,7 +182,7 @@ int main(int argc, const char **argv)
     wait();
 
     testDatabase(datasetFeatures, queryFeatures, datasetImagesNames,
-            queryImagesNames, sOutDirectory, vocName);
+            queryImagesNames, sOutDirectory, vocName, numImagesQuery);
 
     return 0;
 }
@@ -426,7 +428,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         const vector<vector<vector<float> > > &queryFeatures,
         vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-        string& sOutDirectory, string& vocName)
+        string& sOutDirectory, string& vocName, const int numImagesQuery)
 {
     cout << "Creating a database..." << endl;
 
@@ -452,7 +454,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
     // and query the database
     cout << "Querying the database: " << endl;
 
-    int nbBestMatchesToKeep = 4;
+    int nbBestMatchesToKeep = numImagesQuery;
 
     QueryResults ret;
     for(int i = 0; i < NIMAGES_QUERY; i++)
