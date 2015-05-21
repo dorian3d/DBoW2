@@ -92,7 +92,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         const vector<vector<vector<float> > > &queryFeatures,
         vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-        string& sOutDirectory, string& vocName, const int numImagesQuery);
+        string& sOutDirectory, string& vocName);
 bool fileAlreadyExists(string& fileName, string& sDirectory);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -121,7 +121,6 @@ const char* keys =
 "{k |         | 9 | max number of sons of each node                       }"
 "{L |         | 3 | max depth of the vocabulary tree                      }"
 "{r | rootSift| false | use rootSift instead of SIFT                      }"
-"{R |         | 4 | number of similar images to retrive for each query    }"
 ;
 
 // ----------------------------------------------------------------------------
@@ -145,7 +144,6 @@ int main(int argc, const char **argv)
     int L = parser.get<int>("L");
 
     bool root = parser.get<bool>("r");
-	const int numImagesQuery = parser.get<int>("R");
 
     vector<string> datasetImagesNames;
     vector<string> queryImagesNames;
@@ -182,7 +180,7 @@ int main(int argc, const char **argv)
     wait();
 
     testDatabase(datasetFeatures, queryFeatures, datasetImagesNames,
-			queryImagesNames, sOutDirectory, vocName, numImagesQuery);
+            queryImagesNames, sOutDirectory, vocName);
 
     return 0;
 }
@@ -426,9 +424,9 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 // ----------------------------------------------------------------------------
 
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
-  const vector<vector<vector<float> > > &queryFeatures,
-  vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-  string& sOutDirectory, string& vocName, const int numImagesQuery)
+        const vector<vector<vector<float> > > &queryFeatures,
+        vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
+        string& sOutDirectory, string& vocName)
 {
     cout << "Creating a database..." << endl;
 
@@ -454,7 +452,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
     // and query the database
     cout << "Querying the database: " << endl;
 
-  int nbBestMatchesToKeep = numImagesQuery;
+    int nbBestMatchesToKeep = 4;
 
     QueryResults ret;
     for(int i = 0; i < NIMAGES_QUERY; i++)
