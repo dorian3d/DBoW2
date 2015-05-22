@@ -426,6 +426,11 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
     cout << "Vocabulary information: " << endl
         << voc << endl << endl;
 
+    // save the vocabulary to disk
+    cout << endl << "Saving vocabulary..." << endl;
+    voc.save(sOutDirectory + "/" + vocName);
+    cout << "Done" << endl;
+
     // let's do something with this vocabulary
     cout << "Matching images against themselves (0 low, 1 high): " << endl;
     BowVector v1, v2;
@@ -440,11 +445,6 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
             cout << "Image " << i << " vs Image " << j << ": " << score << endl;
         }
     }
-
-    // save the vocabulary to disk
-    cout << endl << "Saving vocabulary..." << endl;
-    voc.save(sOutDirectory + "/" + vocName);
-    cout << "Done" << endl;
 }
 
 // ----------------------------------------------------------------------------
