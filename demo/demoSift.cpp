@@ -154,8 +154,20 @@ int main(int argc, const char **argv)
     storeImages(sDatasetImagesDirectory.c_str(), datasetImagesNames, false);
     if (datasetImagesNames.size() == 0)
     {
+        cout << "There is no image in the dataset directory " << sDatasetImagesDirectory
+                << "... The program is looking for .desc file in the output directory "
+                << sOutDirectory << endl;
+
         justDesc = true;
         storeImages(sOutDirectory.c_str(), datasetImagesNames, true);
+        if (datasetImagesNames.size() == 0)
+        {
+            cout << "There is no image in the dataset directory " << sDatasetImagesDirectory
+                << " and no .desc file in the output directory " << sOutDirectory
+                << "... The program cannot work." << endl;
+            return EXIT_FAILURE;
+        }
+
     }
     storeImages(sQueryImagesDirectory.c_str()  , queryImagesNames, false);
 
