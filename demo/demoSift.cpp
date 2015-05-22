@@ -88,7 +88,7 @@ void storeImages(const char* imagesDirectory, vector<string>& imagesNames, bool 
 void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
         int L);
 void testVocCreation(const vector<vector<vector<float> > > &features,
-        string& sOutDirectory, string& vocName, int k, int L, bool isOK);
+        string& sOutDirectory, string& vocName, int k, int L, bool isOK, bool matchingTest);
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         const vector<vector<vector<float> > > &queryFeatures,
         vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
@@ -122,6 +122,7 @@ const char* keys =
 "{L |         | 3 | max depth of the vocabulary tree                      }"
 "{r | rootSift| false | use rootSift instead of SIFT                      }"
 "{n | nBest   | 4 | number of best matches to keep                        }"
+"{t | testVoc | false | print the score of all pairs after voc creation   }"
 ;
 
 // ----------------------------------------------------------------------------
@@ -146,6 +147,7 @@ int main(int argc, const char **argv)
     const int numImagesQuery = parser.get<int>("n");
 
     bool root = parser.get<bool>("r");
+    bool matchingTest = parser.get<bool>("t");
     bool justDesc = false;
 
     vector<string> datasetImagesNames;
@@ -195,7 +197,7 @@ int main(int argc, const char **argv)
     bool isOK = loadFeatures(datasetFeatures, sDatasetImagesDirectory, sOutDirectory, datasetImagesNames, root, justDesc);
     loadFeatures(queryFeatures  , sQueryImagesDirectory  , sOutDirectory, queryImagesNames, root, false);
 
-    testVocCreation(datasetFeatures, sOutDirectory, vocName, k, L, isOK);
+    testVocCreation(datasetFeatures, sOutDirectory, vocName, k, L, isOK, matchingTest);
 
     wait();
 
@@ -406,7 +408,7 @@ void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
 // ----------------------------------------------------------------------------
 
 void testVocCreation(const vector<vector<vector<float> > > &features,
-        string& sOutDirectory, string& vocName, int k, int L, bool isOK)
+        string& sOutDirectory, string& vocName, int k, int L, bool isOK, bool matchingTest)
 {
     if (fileAlreadyExists(vocName, sOutDirectory) && isOK)
     {
@@ -431,18 +433,21 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
     voc.save(sOutDirectory + "/" + vocName);
     cout << "Done" << endl;
 
-    // let's do something with this vocabulary
-    cout << "Matching images against themselves (0 low, 1 high): " << endl;
-    BowVector v1, v2;
-    for(int i = 0; i < NIMAGES_DATASET; i++)
+    if (matchingTest)
     {
-        voc.transform(features[i], v1);
-        for(int j = 0; j < NIMAGES_DATASET; j++)
+        // let's do something with this vocabulary
+        cout << "Matching images against themselves (0 low, 1 high): " << endl;
+        BowVector v1, v2;
+        for(int i = 0; i < NIMAGES_DATASET; i++)
         {
-            voc.transform(features[j], v2);
+            voc.transform(features[i], v1);
+            for(int j = 0; j < NIMAGES_DATASET; j++)
+            {
+                voc.transform(features[j], v2);
 
-            double score = voc.score(v1, v2);
-            cout << "Image " << i << " vs Image " << j << ": " << score << endl;
+                double score = voc.score(v1, v2);
+                cout << "Image " << i << " vs Image " << j << ": " << score << endl;
+            }
         }
     }
 }
