@@ -714,19 +714,19 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
       //unsigned int d = 0;
 
       unsigned int c = 0;
-//      #pragma omp parallel for private(c)
-      for(fit = descriptors.begin(); fit != descriptors.end(); ++fit) //, ++d)
+      unsigned int idx = 0;
+
+      #pragma omp parallel for private(c)
+      for(idx = 0; idx < descriptors.size(); ++idx)
       {
-        double best_dist = F::distance(*(*fit), clusters[0]);
+        double best_dist = F::distance(*(descriptors[idx]), clusters[0]);
         unsigned int icluster = 0;
 
-        #pragma omp parallel for shared(icluster, best_dist)
         for(c = 1; c < clusters.size(); ++c)
         {
-          double dist = F::distance(*(*fit), clusters[c]);
+          double dist = F::distance(*(descriptors[idx]), clusters[c]);
           if (dist < best_dist)
           {
-              #pragma omp critical
               if(dist < best_dist)
               {
                 best_dist = dist;
@@ -736,9 +736,10 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
         }
 
         //assoc.ref<unsigned char>(icluster, d) = 1;
-
-        groups[icluster].push_back(fit - descriptors.begin());
-        current_association[ fit - descriptors.begin() ] = icluster;
+        #pragma omp critical
+        groups[icluster].push_back(idx);
+        #pragma omp critical
+        current_association[idx] = icluster;
       }
 
       // kmeans++ ensures all the clusters has any feature associated with them
