@@ -32,11 +32,9 @@ If you use this software in an academic work, please cite:
     }
 }
 
-## Installation notes
+## Building
 
-DBoW2 requires OpenCV and the `Boost::dynamic_bitset` class in order to use the BRIEF version. You can install Boost by typing:
-
-    $ sudo apt-get install libboost-dev
+Check dependencies and compilation instruction in the [BUILD](BUILD.md) file.
 
 
 ## Usage notes
