@@ -10,8 +10,6 @@
 #ifndef __D_T_TEMPLATED_VOCABULARY__
 #define __D_T_TEMPLATED_VOCABULARY__
 
-#include <omp.h>
-
 #include <cassert>
 
 #include <vector>
@@ -845,6 +843,7 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
   // create first cluster
   clusters.push_back(*pfeatures[ifeature]);
 
+  #pragma omp parallel for
   for (unsigned int i = 0; i < pfeatures.size(); ++i)
   {
     min_dists[i] = F::distance(*pfeatures[i], clusters.back());
@@ -853,8 +852,8 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
   while((int)clusters.size() < m_k)
   {
     // 2.
-//#pragma omp parallel for
 
+    #pragma omp parallel for
     for (unsigned int i = 0; i < pfeatures.size(); ++i)
     {
       if (min_dists[i] > 0)
@@ -878,6 +877,7 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
       double d_up_now = 0;
 
       unsigned int j = 0;
+
       for (j = 0; j < min_dists.size(); ++j)
       {
         d_up_now += min_dists[j];
