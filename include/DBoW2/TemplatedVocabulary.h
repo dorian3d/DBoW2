@@ -845,27 +845,22 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
   // create first cluster
   clusters.push_back(*pfeatures[ifeature]);
 
-  // compute the initial distances
-  typename vector<pDescriptor>::const_iterator fit;
-  vector<double>::iterator dit;
-  dit = min_dists.begin();
-
-  for(fit = pfeatures.begin(); fit != pfeatures.end(); ++fit, ++dit)
+  for (unsigned int i = 0; i < pfeatures.size(); ++i)
   {
-    *dit = F::distance(*(*fit), clusters.back());
+    min_dists[i] = F::distance(*pfeatures[i], clusters.back());
   }
 
   while((int)clusters.size() < m_k)
   {
     // 2.
-    dit = min_dists.begin();
 //#pragma omp parallel for
-    for(fit = pfeatures.begin(); fit != pfeatures.end(); ++fit, ++dit)
+
+    for (unsigned int i = 0; i < pfeatures.size(); ++i)
     {
-      if(*dit > 0)
+      if (min_dists[i] > 0)
       {
-        double dist = F::distance(*(*fit), clusters.back());
-        if(dist < *dit) *dit = dist;
+        double dist = F::distance(*pfeatures[i], clusters.back());
+        if (dist < min_dists[i]) min_dists[i] = dist;
       }
     }
 
@@ -881,19 +876,15 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
       } while(cut_d == 0.0);
 
       double d_up_now = 0;
-//#pragma omp parallel for
-      for(dit = min_dists.begin(); dit != min_dists.end(); ++dit)
+
+      unsigned int j = 0;
+      for (j = 0; j < min_dists.size(); ++j)
       {
-        d_up_now += *dit;
-        if(d_up_now >= cut_d) break;
+        d_up_now += min_dists[j];
+        if (d_up_now >= cut_d) break;
       }
 
-      if(dit == min_dists.end())
-        ifeature = pfeatures.size()-1;
-      else
-        ifeature = dit - min_dists.begin();
-
-      clusters.push_back(*pfeatures[ifeature]);
+      clusters.push_back(*pfeatures[j]);
 
     } // if dist_sum > 0
     else
@@ -1339,7 +1330,9 @@ void TemplatedVocabulary<TDescriptor,F>::save(const std::string &filename) const
 template<class TDescriptor, class F>
 void TemplatedVocabulary<TDescriptor,F>::load(const std::string &filename)
 {
+  cout << "ici" << endl;
   cv::FileStorage fs(filename.c_str(), cv::FileStorage::READ);
+  cout << "la" << endl;
   if(!fs.isOpened()) throw string("Could not open file ") + filename;
 
   this->load(fs);
