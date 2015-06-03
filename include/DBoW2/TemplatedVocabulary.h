@@ -725,11 +725,11 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
           double dist = F::distance(*(descriptors[idx]), clusters[c]);
           if (dist < best_dist)
           {
-              if(dist < best_dist)
-              {
-                best_dist = dist;
-                icluster = c;
-              }
+            if(dist < best_dist)
+            {
+              best_dist = dist;
+              icluster = c;
+            }
           }
         }
 
@@ -951,21 +951,22 @@ void TemplatedVocabulary<TDescriptor,F>::setNodeWeights
     #pragma omp parallel for
     for (i = 0; i < training_features.size(); ++i)
     {
-        vector<bool> counted(NWords, false);
-        for (unsigned int j = 0; j < training_features[i].size(); ++j)
+      vector<bool> counted(NWords, false);
+      for (unsigned int j = 0; j < training_features[i].size(); ++j)
+      {
+        WordId word_id;
+        transform(training_features[i][j], word_id);
+        if (!counted[word_id])
         {
-            WordId word_id;
-            transform(training_features[i][j], word_id);
-            if (!counted[word_id])
-            {
-                #pragma omp critical
-                Ni[word_id]++;
-                counted[word_id] = true;
-            }
+          #pragma omp critical
+          Ni[word_id]++;
+          counted[word_id] = true;
         }
+      }
     }
 
     // set ln(N/Ni)
+    #pragma omp parallel for
     for(unsigned int i = 0; i < NWords; i++)
     {
       if(Ni[i] > 0)
