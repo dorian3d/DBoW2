@@ -931,6 +931,7 @@ void TemplatedVocabulary<TDescriptor,F>::setNodeWeights
   if(m_weighting == TF || m_weighting == BINARY)
   {
     // idf part must be 1 always
+    #pragma omp parallel for
     for(unsigned int i = 0; i < NWords; i++)
       m_words[i]->weight = 1;
   }
@@ -942,26 +943,26 @@ void TemplatedVocabulary<TDescriptor,F>::setNodeWeights
     // The complete tf-idf score is calculated in ::transform
 
     vector<unsigned int> Ni(NWords, 0);
-    vector<bool> counted(NWords, false);
 
     typename vector<vector<TDescriptor> >::const_iterator mit;
     typename vector<TDescriptor>::const_iterator fit;
 
-    for(mit = training_features.begin(); mit != training_features.end(); ++mit)
+    unsigned int i = 0;
+    #pragma omp parallel for
+    for (i = 0; i < training_features.size(); ++i)
     {
-      fill(counted.begin(), counted.end(), false);
-
-      for(fit = mit->begin(); fit < mit->end(); ++fit)
-      {
-        WordId word_id;
-        transform(*fit, word_id);
-
-        if(!counted[word_id])
+        vector<bool> counted(NWords, false);
+        for (unsigned int j = 0; j < training_features[i].size(); ++j)
         {
-          Ni[word_id]++;
-          counted[word_id] = true;
+            WordId word_id;
+            transform(training_features[i][j], word_id);
+            if (!counted[word_id])
+            {
+                #pragma omp critical
+                Ni[word_id]++;
+                counted[word_id] = true;
+            }
         }
-      }
     }
 
     // set ln(N/Ni)
@@ -1330,9 +1331,7 @@ void TemplatedVocabulary<TDescriptor,F>::save(const std::string &filename) const
 template<class TDescriptor, class F>
 void TemplatedVocabulary<TDescriptor,F>::load(const std::string &filename)
 {
-  cout << "ici" << endl;
   cv::FileStorage fs(filename.c_str(), cv::FileStorage::READ);
-  cout << "la" << endl;
   if(!fs.isOpened()) throw string("Could not open file ") + filename;
 
   this->load(fs);

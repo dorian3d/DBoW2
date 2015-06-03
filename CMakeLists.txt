@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(DBoW2)
 
+option(WITH_OPENMP   "Enable OpenMP multithreading"     ON)
 option(BUILD_DBoW2   "Build DBoW2"            ON)
 option(BUILD_Demo    "Build demo application" ON)
 
@@ -14,6 +15,17 @@ set(HDRS
 set(SRCS
 	src/BowVector.cpp     src/FBrief.cpp        src/FSurf64.cpp       src/FORB.cpp
 	src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp src/FSift.cpp)
+
+if (WITH_OPENMP)
+    find_package(OpenMP QUIET)
+    if(OPENMP_FOUND)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    else()
+        message("")
+        UPDATE_CACHE_VARIABLE(WITH_OPENMP OFF)
+    endif(OPENMP_FOUND)
+endif(WITH_OPENMP)
 
 find_package(OpenCV REQUIRED)
 find_package(DLib REQUIRED)
