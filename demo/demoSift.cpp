@@ -123,6 +123,7 @@ const char* keys =
 "{r | rootSift| false | use rootSift instead of SIFT                      }"
 "{n | nBest   | 4 | number of best matches to keep                        }"
 "{t | testVoc | false | print the score of all pairs after voc creation   }"
+"{w | wait    | false | wait between voc creation and database creation   }"
 ;
 
 // ----------------------------------------------------------------------------
@@ -148,10 +149,22 @@ int main(int argc, const char **argv)
 
     bool root = parser.get<bool>("r");
     bool matchingTest = parser.get<bool>("t");
+    bool waitAfterVocCreation = parser.get<bool>("w");
     bool justDesc = false;
 
     vector<string> datasetImagesNames;
     vector<string> queryImagesNames;
+
+    vector<double> timers;
+
+    struct timeval tglobalStart, t1, t2, tglobalEnd;
+
+    cout << endl;
+    cout << "Starting the global timer..." << endl;
+    cout << endl;
+
+    gettimeofday(&tglobalStart, NULL);
+    gettimeofday(&t1, NULL);
 
     storeImages(sDatasetImagesDirectory.c_str(), datasetImagesNames, false);
     if (datasetImagesNames.size() == 0)
@@ -171,7 +184,18 @@ int main(int argc, const char **argv)
         }
 
     }
+
+    gettimeofday(&t2, NULL);
+    double texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    timers.push_back(texec);
+
+    gettimeofday(&t1, NULL);
+
     storeImages(sQueryImagesDirectory.c_str()  , queryImagesNames, false);
+
+    gettimeofday(&t2, NULL);
+    texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    timers.push_back(texec);
 
     NIMAGES_DATASET = datasetImagesNames.size();
     NIMAGES_QUERY   = queryImagesNames.size();
@@ -194,15 +218,52 @@ int main(int argc, const char **argv)
     cout << "Extracting SIFT features..." << endl;
     vector<vector<vector<float> > > datasetFeatures;
     vector<vector<vector<float> > > queryFeatures;
+
+    gettimeofday(&t1, NULL);
+
     bool isOK = loadFeatures(datasetFeatures, sDatasetImagesDirectory, sOutDirectory, datasetImagesNames, root, justDesc);
+
+    gettimeofday(&t2, NULL);
+    texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    timers.push_back(texec);
+    gettimeofday(&t1, NULL);
+
     loadFeatures(queryFeatures  , sQueryImagesDirectory  , sOutDirectory, queryImagesNames, root, false);
+
+    gettimeofday(&t2, NULL);
+    texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    timers.push_back(texec);
+    gettimeofday(&t1, NULL);
 
     testVocCreation(datasetFeatures, sOutDirectory, vocName, k, L, isOK, matchingTest);
 
-    wait();
+    gettimeofday(&t2, NULL);
+    texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    timers.push_back(texec);
+
+    if (waitAfterVocCreation) wait();
+
+    gettimeofday(&t1, NULL);
 
     testDatabase(datasetFeatures, queryFeatures, datasetImagesNames,
             queryImagesNames, sOutDirectory, vocName, numImagesQuery);
+
+    gettimeofday(&t2, NULL);
+    texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    timers.push_back(texec);
+
+    gettimeofday(&tglobalEnd, NULL);
+    texec = (double) (1000.0*(tglobalEnd.tv_sec - tglobalStart.tv_sec) + (tglobalEnd.tv_usec - tglobalStart.tv_usec)/1000.0);
+
+    cout << endl;
+    cout << "Dataset images storage took " << timers[0] << " ms" << endl;
+    cout << "Query images storage took " << timers[1] << " ms" << endl;
+    cout << "Dataset features loading took " << timers[2] << " ms" << endl;
+    cout << "Query features loading took " << timers[3] << " ms" << endl;
+    cout << "Vocabulary testing took " << timers[4] << " ms" << endl;
+    cout << "Database testing took " << timers[5] << " ms" << endl;
+    cout << endl;
+    cout << "Global algorithm took " << texec << " ms" << endl;
 
     return 0;
 }
@@ -284,13 +345,10 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
             vector<cv::KeyPoint> keypoints;
             cv::Mat matDescriptors;
             sift(image, mask, keypoints, matDescriptors);
-            cout << keypoints.size() << " keypoints found on " << sDatasetDirectory
-                << "/" << imagesNames[i] << endl;
 
             descriptors.assign((float*)matDescriptors.datastart,
                     (float*)matDescriptors.dataend);
 
-            std::cout << "descriptor size is " << descriptors.size()/128 << std::endl;
             int descriptorSize = static_cast<int>(descriptors.size()/128);
 
             if (root)
@@ -333,7 +391,8 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
         {
             string path = sOutDirectory + "/" + descFileName;
             descriptors = readDescFromBinFile(path.c_str());
-            std::cout << "Descriptor size is " << descriptors.size()/128 << std::endl;
+            cout << "Descriptor size is " << descriptors.size()/128 << endl;
+            cout << endl;
         }
         else // a rootSift descriptor file has been loaded with -r false
              // or a sift descriptor file has been loaded with -r true
@@ -358,11 +417,11 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
             sift(image, mask, keypoints, matDescriptors);
             cout << keypoints.size() << " keypoints found on " << sDatasetDirectory
                 << "/" << imagesNames[i] << endl;
+            cout << endl;
 
             descriptors.assign((float*)matDescriptors.datastart,
                                (float*)matDescriptors.dataend);
 
-            std::cout << "descriptor size is " << descriptors.size()/128 << std::endl;
             int descriptorSize = static_cast<int>(descriptors.size()/128);
 
             if (root)
@@ -434,14 +493,15 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 
     cout << "... done!" << endl;
     cout << " in " << texec << " ms" << endl;
+    cout << endl;
 
     cout << "Vocabulary information: " << endl
-        << voc << endl << endl;
+        << voc << endl;
 
     // save the vocabulary to disk
     cout << endl << "Saving vocabulary..." << endl;
     voc.save(sOutDirectory + "/" + vocName);
-    cout << "Done" << endl;
+    cout << endl;
 
     if (matchingTest)
     {
@@ -470,9 +530,19 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         string& sOutDirectory, string& vocName, const int numImagesQuery)
 {
     cout << "Creating a database..." << endl;
+    cout << endl;
 
     // load the vocabulary from disk
+    cout << "Loading the vocabulary..." << endl;
+    cout << endl;
     SiftVocabulary voc(sOutDirectory + "/" + vocName);
+    cout << "Vocabulary loaded!" << endl;
+
+    cout << endl;
+    cout << "Database creation..." << endl;
+
+    struct timeval t1, t2;
+    gettimeofday(&t1, NULL);
 
     SiftDatabase db(voc, false, 0); // false = do not use direct index
     // (so ignore the last param)
@@ -480,29 +550,39 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
     // belong to some vocabulary node.
     // db creates a copy of the vocabulary, we may get rid of "voc" now
 
+    gettimeofday(&t2, NULL);
+    double texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+
+    cout << "Database created in " << texec << " ms! Adding the features to the database..." << endl;
+    gettimeofday(&t1, NULL);
+
     // add images to the database
     for(int i = 0; i < NIMAGES_DATASET; i++)
     {
         db.add(datasetFeatures[i]);
     }
 
-    cout << "... done!" << endl;
+    gettimeofday(&t2, NULL);
+    texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    cout << "... done in " << texec << " ms!" << endl;
 
+    cout << endl;
     cout << "Database information: " << endl << db << endl;
 
     // and query the database
+    cout << endl;
     cout << "Querying the database: " << endl;
+    cout << endl;
 
     int nbBestMatchesToKeep = numImagesQuery;
 
     QueryResults ret;
     for(int i = 0; i < NIMAGES_QUERY; i++)
     {
-        struct timeval tbegin, tend;
-        gettimeofday(&tbegin, NULL);
+        gettimeofday(&t1, NULL);
         db.query(queryFeatures[i], ret, nbBestMatchesToKeep);
-        gettimeofday(&tend,NULL);
-        double texec = (double) (1000.0*(tend.tv_sec - tbegin.tv_sec) + (tend.tv_usec - tbegin.tv_usec)/1000.0);
+        gettimeofday(&t2,NULL);
+        texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
 
         // ret[0] is always the same image in this case, because we added it to the
         // database. ret[1] is the second best match.
