@@ -421,9 +421,19 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 
     SiftVocabulary voc(k, L, weight, score);
 
+
     cout << "Creating a " << k << "^" << L << " vocabulary..." << endl;
+
+    struct timeval tbegin, tend;
+    gettimeofday(&tbegin, NULL);
+
     voc.create(features);
+
+    gettimeofday(&tend,NULL);
+    double texec = (double) (1000.0*(tend.tv_sec - tbegin.tv_sec) + (tend.tv_usec - tbegin.tv_usec)/1000.0);
+
     cout << "... done!" << endl;
+    cout << " in " << texec << " ms" << endl;
 
     cout << "Vocabulary information: " << endl
         << voc << endl << endl;
@@ -497,7 +507,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         // ret[0] is always the same image in this case, because we added it to the
         // database. ret[1] is the second best match.
 
-        for (int j = 0; j < nbBestMatchesToKeep; j++)
+        for (int j = 0; j < fmin(nbBestMatchesToKeep, ret.size()); j++)
         {
             cout << "Searching for Image " << i << ": " << queryImagesNames[i]
                 << "... Found: " << datasetImagesNames[ret[j].Id]
