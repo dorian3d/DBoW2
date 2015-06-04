@@ -1061,10 +1061,11 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
   LNorm norm;
   bool must = m_scoring_object->mustNormalize(norm);
 
-	typename vector<TDescriptor>::const_iterator fit;
+  typename vector<TDescriptor>::const_iterator fit;
 
   if(m_weighting == TF || m_weighting == TF_IDF)
   {
+    #pragma omp parallel for
     for(fit = features.begin(); fit < features.end(); ++fit)
     {
       WordId id;
@@ -1074,7 +1075,11 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
       transform(*fit, id, w);
 
       // not stopped
-      if(w > 0) v.addWeight(id, w);
+      if(w > 0)
+      {
+        #pragma omp critical
+        v.addWeight(id, w);
+      }
     }
 
     if(!v.empty() && !must)
@@ -1088,6 +1093,7 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
   }
   else // IDF || BINARY
   {
+    #pragma omp parallel for
     for(fit = features.begin(); fit < features.end(); ++fit)
     {
       WordId id;
@@ -1097,7 +1103,11 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
       transform(*fit, id, w);
 
       // not stopped
-      if(w > 0) v.addIfNotExist(id, w);
+      if(w > 0)
+      {
+        #pragma omp critical
+        v.addIfNotExist(id, w);
+      }
 
     } // if add_features
   } // if m_weighting == ...
@@ -1129,6 +1139,7 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
   if(m_weighting == TF || m_weighting == TF_IDF)
   {
     unsigned int i_feature = 0;
+
     for(fit = features.begin(); fit < features.end(); ++fit, ++i_feature)
     {
       WordId id;
@@ -1152,7 +1163,6 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
       for(BowVector::iterator vit = v.begin(); vit != v.end(); vit++)
         vit->second /= nd;
     }
-
   }
   else // IDF || BINARY
   {
