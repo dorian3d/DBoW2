@@ -372,21 +372,31 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
         vector<float> firstDescriptor;
         string path = sOutDirectory + "/" + descFileName;
         firstDescriptor = readDescFromBinFile(path.c_str());
-        float firstDescriptorNorm = 0;
 
-        for (unsigned int k = 0; k < 128; k++)
+        if (firstDescriptor.size() >= 128)
         {
-            firstDescriptorNorm += firstDescriptor[k]*firstDescriptor[k];
+            float firstDescriptorNorm = 0;
+
+            for (unsigned int k = 0; k < 128; k++)
+            {
+                firstDescriptorNorm += firstDescriptor[k]*firstDescriptor[k];
+            }
+
+            if ((firstDescriptorNorm < 1.01 ) == root)
+            {
+                loadFile = true;
+            }
+            else
+            {
+                goodDescType = false;
+            }
         }
 
-        if ((firstDescriptorNorm < 1.01 ) == root)
+        else // descriptor is empty so it can be loaded with sift or rootSift the same way
         {
             loadFile = true;
         }
-        else
-        {
-            goodDescType = false;
-        }
+
         if (loadFile) // descFileName already exists, just load it
         {
             string path = sOutDirectory + "/" + descFileName;
@@ -631,11 +641,12 @@ bool fileAlreadyExists(string& fileName, string& sDirectory)
             {
                 cout << "The file " << fileName
                     << " already exists, there is no need to recreate it" << endl;
+                closedir(repertoire);
                 return true;
             }
         }
-        closedir(repertoire);
     }
+    closedir(repertoire);
     return false;
 }
 
