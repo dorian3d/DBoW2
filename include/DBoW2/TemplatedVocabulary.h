@@ -662,6 +662,7 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
     while(goon)
     {
       it++;
+      cout << "Iteration number " << it << "/" << nbMaxIt << endl;
       // 1. Calculate clusters
       if(first_time)
       {
@@ -766,7 +767,6 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
           //last_assoc = assoc.clone();
       }
     } // while(goon)
-
   } // if must run kmeans
   // create nodes
   for(unsigned int i = 0; i < clusters.size(); ++i)
@@ -796,11 +796,14 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
         child_features.push_back(descriptors[*vit]);
       }
 
+      cout << "Level: " << current_level << "/" << m_L << "   : " << static_cast<double>(i)/static_cast<double>(clusters.size()) << "%";
+      cout.flush();
       if(child_features.size() > 1)
       {
         HKmeansStep(id, child_features, current_level + 1);
       }
     }
+    cout << endl;
   }
 }
 
