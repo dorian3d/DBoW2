@@ -796,8 +796,6 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
         child_features.push_back(descriptors[*vit]);
       }
 
-      cout << "Level: " << current_level << "/" << m_L << "   : " << static_cast<double>(i)/static_cast<double>(clusters.size()) << "%";
-      cout.flush();
       if(child_features.size() > 1)
       {
         HKmeansStep(id, child_features, current_level + 1);
@@ -1068,14 +1066,16 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
 
   if(m_weighting == TF || m_weighting == TF_IDF)
   {
+    unsigned int i_feature = 0;
+
     #pragma omp parallel for
-    for(fit = features.begin(); fit < features.end(); ++fit)
+    for (i_feature = 0; i_feature < features.size(); ++i_feature)
     {
       WordId id;
       WordValue w;
       // w is the idf value if TF_IDF, 1 if TF
 
-      transform(*fit, id, w);
+      transform(features[i_feature], id, w);
 
       // not stopped
       if(w > 0)
@@ -1096,14 +1096,16 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
   }
   else // IDF || BINARY
   {
+    unsigned int i_feature = 0;
+
     #pragma omp parallel for
-    for(fit = features.begin(); fit < features.end(); ++fit)
+    for (i_feature = 0; i_feature < features.size(); ++i_feature)
     {
       WordId id;
       WordValue w;
       // w is idf if IDF, or 1 if BINARY
 
-      transform(*fit, id, w);
+      transform(features[i_feature], id, w);
 
       // not stopped
       if(w > 0)
@@ -1143,19 +1145,23 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
   {
     unsigned int i_feature = 0;
 
-    for(fit = features.begin(); fit < features.end(); ++fit, ++i_feature)
+    #pragma omp parallel for
+    for (i_feature = 0; i_feature < features.size(); ++i_feature)
     {
       WordId id;
       NodeId nid;
       WordValue w;
       // w is the idf value if TF_IDF, 1 if TF
 
-      transform(*fit, id, w, &nid, levelsup);
+      transform(features[i_feature], id, w, &nid, levelsup);
 
       if(w > 0) // not stopped
       {
-        v.addWeight(id, w);
-        fv.addFeature(nid, i_feature);
+        #pragma omp critical
+        {
+          v.addWeight(id, w);
+          fv.addFeature(nid, i_feature);
+        }
       }
     }
 
@@ -1170,19 +1176,23 @@ void TemplatedVocabulary<TDescriptor,F>::transform(
   else // IDF || BINARY
   {
     unsigned int i_feature = 0;
-    for(fit = features.begin(); fit < features.end(); ++fit, ++i_feature)
+
+    for (i_feature = 0; i_feature < features.size(); ++i_feature)
     {
       WordId id;
       NodeId nid;
       WordValue w;
       // w is idf if IDF, or 1 if BINARY
 
-      transform(*fit, id, w, &nid, levelsup);
+      transform(features[i_feature], id, w, &nid, levelsup);
 
       if(w > 0) // not stopped
       {
-        v.addIfNotExist(id, w);
-        fv.addFeature(nid, i_feature);
+        #pragma omp critical
+        {
+          v.addIfNotExist(id, w);
+          fv.addFeature(nid, i_feature);
+        }
       }
     }
   } // if m_weighting == ...
