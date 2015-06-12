@@ -561,10 +561,12 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
     gettimeofday(&t1, NULL);
 
     bool useDirectIndex = diLvl >= 0;
+    bool dbAlreadyExists = fileAlreadyExists(dbName, sOutDirectory);
 
     SiftDatabase db;
 
-    if (!fileAlreadyExists(dbName, sOutDirectory))
+
+    if (!dbAlreadyExists)
     {
         db = SiftDatabase(voc, useDirectIndex, diLvl); // false = do not use direct index
         // (so ignore the last param)
@@ -626,16 +628,14 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
 
     cout << endl;
 
-    // we can save the database. The created file includes the vocabulary
-    // and the entries added
-    cout << "Saving database..." << endl;
-    db.save(sOutDirectory + "/db.yml.gz");
-    cout << "... done!" << endl;
-
-    // once saved, we can load it again
-    cout << "Retrieving database once again..." << endl;
-    SiftDatabase db2(sOutDirectory + "/db.yml.gz");
-    cout << "... done! This is: " << endl << db2 << endl;
+    if (!dbAlreadyExists)
+    {
+        // we can save the database. The created file includes the vocabulary
+        // and the entries added
+        cout << "Saving database..." << endl;
+        db.save(sOutDirectory + "/db.yml.gz");
+        cout << "... done!" << endl;
+    }
 }
 
 // ----------------------------------------------------------------------------
