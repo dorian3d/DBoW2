@@ -92,7 +92,8 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         const vector<vector<vector<float> > > &queryFeatures,
         vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-        string& sOutDirectory, string& vocName, const int numImagesQuery);
+        string& sOutDirectory, string& vocName, string& dbName,
+        const int numImagesQuery, int diLvl);
 bool fileAlreadyExists(string& fileName, string& sDirectory);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -113,17 +114,19 @@ void wait()
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 const char* keys =
-"{h | help	| false  | print this message                                 }"
+"{h | help    | false  | print this message                               }"
 "{d | dataset | images/  | path to the directory containing dataset images}"
-"{q | query	| images/  | path to the directory containing query images    }"
+"{q | query   | images/  | path to the directory containing query images  }"
 "{o | output  | ./       | path to the output directory                   }"
 "{v | vocName | small_voc.yml.gz  | name of the vocabulary file           }"
+"{b | dbName  | db.yml.gz  | name of the database file                    }"
 "{k |         | 9 | max number of sons of each node                       }"
 "{L |         | 3 | max depth of the vocabulary tree                      }"
 "{r | rootSift| false | use rootSift instead of SIFT                      }"
 "{n | nBest   | 4 | number of best matches to keep                        }"
 "{t | testVoc | false | print the score of all pairs after voc creation   }"
 "{w | wait    | false | wait between voc creation and database creation   }"
+"{i | direct  | -1 | direct index level (if -1, do not use direct index)  }"
 ;
 
 // ----------------------------------------------------------------------------
@@ -142,9 +145,11 @@ int main(int argc, const char **argv)
     string sQueryImagesDirectory   = parser.get<string>("q");
     string sOutDirectory = parser.get<string>("o");
     string vocName = parser.get<string>("vocName");
+    string dbName = parser.get<string>("dbName");
 
     int k = parser.get<int>("k");
     int L = parser.get<int>("L");
+    int diLvl = parser.get<int>("i");
     const int numImagesQuery = parser.get<int>("n");
 
     bool root = parser.get<bool>("r");
@@ -246,7 +251,7 @@ int main(int argc, const char **argv)
     gettimeofday(&t1, NULL);
 
     testDatabase(datasetFeatures, queryFeatures, datasetImagesNames,
-            queryImagesNames, sOutDirectory, vocName, numImagesQuery);
+            queryImagesNames, sOutDirectory, vocName, dbName, numImagesQuery, diLvl);
 
     gettimeofday(&t2, NULL);
     texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
@@ -537,7 +542,8 @@ void testVocCreation(const vector<vector<vector<float> > > &features,
 void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         const vector<vector<vector<float> > > &queryFeatures,
         vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
-        string& sOutDirectory, string& vocName, const int numImagesQuery)
+        string& sOutDirectory, string& vocName, string& dbName,
+        const int numImagesQuery, int diLvl)
 {
     cout << "Creating a database..." << endl;
     cout << endl;
@@ -554,27 +560,38 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
 
-    SiftDatabase db(voc, false, 0); // false = do not use direct index
-    // (so ignore the last param)
-    // The direct index is useful if we want to retrieve the features that
-    // belong to some vocabulary node.
-    // db creates a copy of the vocabulary, we may get rid of "voc" now
+    bool useDirectIndex = diLvl >= 0;
 
-    gettimeofday(&t2, NULL);
-    double texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+    SiftDatabase db;
 
-    cout << "Database created in " << texec << " ms! Adding the features to the database..." << endl;
-    gettimeofday(&t1, NULL);
-
-    // add images to the database
-    for(int i = 0; i < NIMAGES_DATASET; i++)
+    if (!fileAlreadyExists(dbName, sOutDirectory))
     {
-        db.add(datasetFeatures[i]);
-    }
+        db = SiftDatabase(voc, useDirectIndex, diLvl); // false = do not use direct index
+        // (so ignore the last param)
+        // The direct index is useful if we want to retrieve the features that
+        // belong to some vocabulary node.
+        // db creates a copy of the vocabulary, we may get rid of "voc" now
 
-    gettimeofday(&t2, NULL);
-    texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
-    cout << "... done in " << texec << " ms!" << endl;
+        gettimeofday(&t2, NULL);
+        double texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+
+        cout << "Database created in " << texec << " ms! Adding the features to the database..." << endl;
+        gettimeofday(&t1, NULL);
+
+        // add images to the database
+        for(int i = 0; i < NIMAGES_DATASET; i++)
+        {
+            db.add(datasetFeatures[i]);
+        }
+
+        gettimeofday(&t2, NULL);
+        texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+        cout << "... done in " << texec << " ms!" << endl;
+    }
+    else
+    {
+        db.load(sOutDirectory + "/" + dbName);
+    }
 
     cout << endl;
     cout << "Database information: " << endl << db << endl;
@@ -592,7 +609,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         gettimeofday(&t1, NULL);
         db.query(queryFeatures[i], ret, nbBestMatchesToKeep);
         gettimeofday(&t2,NULL);
-        texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
+        double texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
 
         // ret[0] is always the same image in this case, because we added it to the
         // database. ret[1] is the second best match.
