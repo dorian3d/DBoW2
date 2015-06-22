@@ -633,7 +633,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         // we can save the database. The created file includes the vocabulary
         // and the entries added
         cout << "Saving database..." << endl;
-        db.save(sOutDirectory + "/db.yml.gz");
+        db.save(sOutDirectory + "/" + dbName);
         cout << "... done!" << endl;
     }
 }
