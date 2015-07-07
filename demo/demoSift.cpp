@@ -81,6 +81,45 @@ vector<float> readDescFromBinFile(const char* path)
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+bool writeFeatToFile(const std::string path, const std::vector<cv::KeyPoint> &kpt)
+{
+    ofstream file(path.c_str());
+    for (vector<cv::KeyPoint>::const_iterator it = kpt.begin(); it != kpt.end(); ++it)
+        file << (*it).pt.x << " " << (*it).pt.y << " " << (*it).size << " " << (*it).angle << endl;
+
+    bool isOk = file.good();
+    file.close();
+
+    return isOk;
+}
+
+vector<cv::KeyPoint> readFeatFromFile(const char* path)
+{
+    vector<cv::KeyPoint> res;
+    fstream fs;
+
+    // Load file
+    fs.open(path, ios::in);
+    if(!fs.is_open())
+    {
+        std::cout << "Error when opening directory" << std::endl;
+        return res;
+    }
+
+    // Fill the vector
+    float x, y, size, angle;
+    while (fs >> x >> y >> size >> angle)
+    {
+        res.push_back(cv::KeyPoint(x,y,size,angle));
+    }
+
+    // Close file and return
+    fs.close();
+    return res;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 bool loadFeatures(vector<vector<vector<float> > > &features,
         string sDatasetImagesDirectory, string sOutDirectory,
         vector<string> imagesNames, bool root, bool justDesc);
@@ -340,9 +379,14 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
         ss << sDatasetDirectory << "/" << imagesNames[i];
 
         string descFileName = imagesNames[i].substr(0, imagesNames[i].find_last_of(".")) + ".desc";
+        string featFileName = imagesNames[i].substr(0, imagesNames[i].find_last_of(".")) + ".feat";
         vector<float> descriptors;
 
-        if (!fileAlreadyExists(descFileName, sOutDirectory))
+        bool descFileExists = fileAlreadyExists(descFileName, sOutDirectory);
+        bool featFileExists = fileAlreadyExists(featFileName, sOutDirectory);
+
+//        if (!fileAlreadyExists(descFileName, sOutDirectory))
+        if (!descFileExists || !featFileExists)
         {
             cout << "File " << sOutDirectory + "/" + descFileName << " does not exist" << endl;
             cv::Mat image = cv::imread(ss.str(), 0);
@@ -350,6 +394,8 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
             vector<cv::KeyPoint> keypoints;
             cv::Mat matDescriptors;
             sift(image, mask, keypoints, matDescriptors);
+
+            std::cout << keypoints.size() << " ," << matDescriptors.size()<<std::endl;
 
             descriptors.assign((float*)matDescriptors.datastart,
                     (float*)matDescriptors.dataend);
@@ -371,7 +417,10 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
                     }
                 }
             }
-            writeDescToBinFile(sOutDirectory+"/"+descFileName, descriptors);
+            if (!descFileExists)
+                writeDescToBinFile(sOutDirectory+"/"+descFileName, descriptors);
+            if (!featFileExists)
+                writeFeatToFile(sOutDirectory+"/"+featFileName, keypoints);
         }
 
         vector<float> firstDescriptor;
