@@ -32,6 +32,10 @@
 // Execution Time
 #include <sys/time.h>
 
+// Directory creation
+//#include <boost/filesystem.hpp>
+#include <sys/stat.h>
+
 using namespace DBoW2;
 using namespace DUtils;
 using namespace std;
@@ -133,6 +137,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         vector<string>& datasetImagesNames, vector<string>& queryImagesNames,
         string& sOutDirectory, string& vocName, string& dbName,
         const int numImagesQuery, int diLvl);
+bool createDir(string& path);
 bool fileAlreadyExists(string& fileName, string& sDirectory);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -263,16 +268,22 @@ int main(int argc, const char **argv)
     vector<vector<vector<float> > > datasetFeatures;
     vector<vector<vector<float> > > queryFeatures;
 
+    string featQueryDir = sOutDirectory + "/featQuery";
+    string featDatasetDir = sOutDirectory + "/featDataset";
+    createDir(sOutDirectory);
+    createDir(featQueryDir);
+    createDir(featDatasetDir);
+
     gettimeofday(&t1, NULL);
 
-    bool isOK = loadFeatures(datasetFeatures, sDatasetImagesDirectory, sOutDirectory, datasetImagesNames, root, justDesc);
+    bool isOK = loadFeatures(datasetFeatures, sDatasetImagesDirectory, sOutDirectory+"/featDataset", datasetImagesNames, root, justDesc);
 
     gettimeofday(&t2, NULL);
     texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
     timers.push_back(texec);
     gettimeofday(&t1, NULL);
 
-    loadFeatures(queryFeatures  , sQueryImagesDirectory  , sOutDirectory, queryImagesNames, root, false);
+    loadFeatures(queryFeatures  , sQueryImagesDirectory  , sOutDirectory+"/featQuery", queryImagesNames, root, false);
 
     gettimeofday(&t2, NULL);
     texec = (double) (1000.0*(t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1000.0);
@@ -685,6 +696,29 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         db.save(sOutDirectory + "/" + dbName);
         cout << "... done!" << endl;
     }
+}
+
+// ----------------------------------------------------------------------------
+
+bool createDir(string& path)
+{
+    DIR * repertoire = opendir(path.c_str());
+
+    if (repertoire == NULL)
+    {
+//        boost::filesystem::path dir(path);
+//        if (boost::filesystem::create_directory(dir))
+//        {
+          mkdir(path.c_str(), S_IRWXU);
+          return true;
+//        }
+//        else
+//        {
+//            std::cout << "Error when creating directory " << path << std::endl;
+//            return false;
+//        }
+    }
+    return false;
 }
 
 // ----------------------------------------------------------------------------
