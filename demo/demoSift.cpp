@@ -42,7 +42,22 @@ using namespace std;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-bool writeDescToBinFile(string filename, vector<float> descriptors)
+bool writeListFile(string filename, vector<string>& imageNames)
+{
+    ofstream file(filename.c_str());
+    // write the number of descriptors
+    for (int i = 0; i < imageNames.size(); ++i)
+    {
+        file << imageNames[i] << endl ;
+    }
+    bool isOk = file.good();
+    file.close();
+    return isOk;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+bool writeDescToBinFile(string filename, vector<float>& descriptors)
 {
     ofstream file(filename.c_str(), ofstream::out | ofstream::binary);
     // write the number of descriptors
@@ -85,7 +100,7 @@ vector<float> readDescFromBinFile(const char* path)
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-bool writeFeatToFile(const std::string path, const std::vector<cv::KeyPoint> &kpt)
+bool writeFeatToFile(const std::string path, const std::vector<cv::KeyPoint>& kpt)
 {
     ofstream file(path.c_str());
     for (vector<cv::KeyPoint>::const_iterator it = kpt.begin(); it != kpt.end(); ++it)
@@ -161,7 +176,7 @@ const char* keys =
 "{h | help    | false  | print this message                               }"
 "{d | dataset | images/  | path to the directory containing dataset images}"
 "{q | query   | images/  | path to the directory containing query images  }"
-"{o | output  | ./       | path to the output directory                   }"
+"{o | output  | ./output | path to the output directory                   }"
 "{v | vocName | small_voc.yml.gz  | name of the vocabulary file           }"
 "{b | dbName  | db.yml.gz  | name of the database file                    }"
 "{k |         | 9 | max number of sons of each node                       }"
@@ -171,6 +186,7 @@ const char* keys =
 "{t | testVoc | false | print the score of all pairs after voc creation   }"
 "{w | wait    | false | wait between voc creation and database creation   }"
 "{i | direct  | -1 | direct index level (if -1, do not use direct index)  }"
+"{l | list    | list.txt | list of used images to build the voctree and db}"
 ;
 
 // ----------------------------------------------------------------------------
@@ -190,6 +206,7 @@ int main(int argc, const char **argv)
     string sOutDirectory = parser.get<string>("o");
     string vocName = parser.get<string>("vocName");
     string dbName = parser.get<string>("dbName");
+    string listName = parser.get<string>("l");
 
     int k = parser.get<int>("k");
     int L = parser.get<int>("L");
@@ -273,6 +290,7 @@ int main(int argc, const char **argv)
     createDir(sOutDirectory);
     createDir(featQueryDir);
     createDir(featDatasetDir);
+    writeListFile(sOutDirectory + "/" + listName, datasetImagesNames);
 
     gettimeofday(&t1, NULL);
 
@@ -366,8 +384,8 @@ void storeImages(const char* imagesDirectory, vector<string>& imagesNames, bool 
                 }
             }
         }
-        closedir(repertoire);
     }
+    closedir(repertoire);
 }
 
 // ----------------------------------------------------------------------------
@@ -405,8 +423,6 @@ bool loadFeatures(vector<vector<vector<float> > > &features,
             vector<cv::KeyPoint> keypoints;
             cv::Mat matDescriptors;
             sift(image, mask, keypoints, matDescriptors);
-
-            std::cout << keypoints.size() << " ," << matDescriptors.size()<<std::endl;
 
             descriptors.assign((float*)matDescriptors.datastart,
                     (float*)matDescriptors.dataend);
@@ -718,6 +734,8 @@ bool createDir(string& path)
 //            return false;
 //        }
     }
+    closedir(repertoire);
+
     return false;
 }
 
