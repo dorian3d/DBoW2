@@ -709,7 +709,7 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
         // we can save the database. The created file includes the vocabulary
         // and the entries added
         cout << "Saving database..." << endl;
-        db.save(sOutDirectory + "/" + dbName);
+        db.saveWithName(sOutDirectory + "/" + dbName, queryImagesNames);
         cout << "... done!" << endl;
     }
 }
