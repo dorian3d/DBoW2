@@ -216,6 +216,12 @@ public:
   void load(const string &filename);
 
   /**
+   * Loads the database from a file
+   * @param filename
+   */
+  void loadWithName(const string &filename, std::vector<std::string>& fileNames);
+
+  /**
    * Stores the database in the given file storage structure
    * @param fs
    * @param name node name
@@ -238,6 +244,15 @@ public:
    * @param name node name
    */
   virtual void load(const cv::FileStorage &fs,
+    const std::string &name = "database");
+
+  /**
+   * Loads the database from the given file storage structure
+   * @param fs
+   * @param name node name
+   */
+  virtual void loadWithName(const cv::FileStorage &fs,
+    std::vector<std::string> &fileNames,
     const std::string &name = "database");
 
 protected:
@@ -1374,6 +1389,18 @@ void TemplatedDatabase<TDescriptor, F>::load(const string &filename)
 // --------------------------------------------------------------------------
 
 template<class TDescriptor, class F>
+void TemplatedDatabase<TDescriptor, F>::loadWithName(const string &filename,
+        std::vector<std::string> &fileNames)
+{
+  cv::FileStorage fs(filename.c_str(), cv::FileStorage::READ);
+  if(!fs.isOpened()) throw string("Could not open file ") + filename;
+
+  loadWithName(fs, fileNames);
+}
+
+// --------------------------------------------------------------------------
+
+template<class TDescriptor, class F>
 void TemplatedDatabase<TDescriptor, F>::load(const cv::FileStorage &fs,
   const std::string &name)
 {
@@ -1436,6 +1463,86 @@ void TemplatedDatabase<TDescriptor, F>::load(const cv::FileStorage &fs,
         //std::copy(aux.begin(), aux.end(), dit->second.begin());
 
         cv::FileNode ff = fe[i]["features"][0];
+        dit->second.reserve(ff.size());
+
+        cv::FileNodeIterator ffit;
+        for(ffit = ff.begin(); ffit != ff.end(); ++ffit)
+        {
+          dit->second.push_back((int)*ffit);
+        }
+      }
+    } // for each entry
+  } // if use_id
+
+}
+
+// --------------------------------------------------------------------------
+
+template<class TDescriptor, class F>
+void TemplatedDatabase<TDescriptor, F>::loadWithName(const cv::FileStorage &fs,
+  std::vector<std::string> &fileNames, const std::string &name)
+{
+  // load voc first
+  // subclasses must instantiate m_voc before calling this ::load
+  if(!m_voc) m_voc = new TemplatedVocabulary<TDescriptor, F>;
+
+  m_voc->load(fs);
+
+  // load database now
+  clear(); // resizes inverted file
+
+  cv::FileNode fdb = fs[name];
+
+  m_nentries = (int)fdb["nEntries"];
+  m_use_di = (int)fdb["usingDI"] != 0;
+  m_dilevels = (int)fdb["diLevels"];
+
+  cv::FileNode fn = fdb["invertedIndex"];
+  for(WordId wid = 0; wid < fn.size(); ++wid)
+  {
+    cv::FileNode fw = fn[wid];
+
+    for(unsigned int i = 0; i < fw.size(); ++i)
+    {
+      EntryId eid = (int)fw[i]["imageId"];
+      WordValue v = fw[i]["weight"];
+
+      m_ifile[wid].push_back(IFPair(eid, v));
+    }
+  }
+
+  if(m_use_di)
+  {
+    fn = fdb["directIndex"];
+
+    m_dfile.resize(fn.size());
+    fileNames.resize(fn.size());
+    assert(m_nentries == (int)fn.size());
+
+    FeatureVector::iterator dit;
+    for(EntryId eid = 0; eid < fn.size(); ++eid)
+    {
+      cv::FileNode fe = fn[eid]["data"];
+      fileNames[eid] = static_cast<std::string>(fn[eid]["filename"]);
+
+      m_dfile[eid].clear();
+      for(unsigned int i = 0; i < fe.size(); ++i)
+      {
+        NodeId nid = (int)fe[i]["nodeId"];
+
+        dit = m_dfile[eid].insert(m_dfile[eid].end(),
+          make_pair(nid, vector<unsigned int>() ));
+
+        // this failed to compile with some opencv versions (2.3.1)
+        //fe[i]["features"] >> dit->second;
+
+        // this was ok until OpenCV 2.4.1
+        //vector<int> aux;
+        //fe[i]["features"] >> aux; // OpenCV < 2.4.1
+        //dit->second.resize(aux.size());
+        //std::copy(aux.begin(), aux.end(), dit->second.begin());
+
+        cv::FileNode ff = fe[i]["features"];
         dit->second.reserve(ff.size());
 
         cv::FileNodeIterator ffit;

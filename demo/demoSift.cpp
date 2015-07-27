@@ -668,7 +668,12 @@ void testDatabase(const vector<vector<vector<float> > > &datasetFeatures,
     }
     else
     {
-        db.load(sOutDirectory + "/" + dbName);
+        std::vector<std::string> fileNames;
+        db.loadWithName(sOutDirectory + "/" + dbName, fileNames);
+        for (unsigned int l = 0; l < fileNames.size(); ++l)
+        {
+          cout << "fileNames[" << l << "] = " << fileNames[l] << endl;
+        }
     }
 
     cout << endl;
