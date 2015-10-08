@@ -40,6 +40,7 @@ public:
   // If you change the type of WordValue, make sure you change also the
 	// epsilon value (this is needed by the KL method)
 	
+  virtual ~GeneralScoring() {} //!< Required for virtual base classes	
 };
 
 /** 
