@@ -15,9 +15,10 @@ set(SRCS
 
 find_package(OpenCV REQUIRED)
 find_package(DLib REQUIRED)
+find_package(Boost REQUIRED)  # For dynamic_bitset
 
 if(BUILD_DBoW2)
-  include_directories(include/DBoW2/ ${OpenCV_INCLUDE_DIRS} ${DLib_INCLUDE_DIRS})
+  include_directories(include/DBoW2/ ${OpenCV_INCLUDE_DIRS} ${DLib_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
   add_library(${PROJECT_NAME} SHARED ${SRCS})
   target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
 endif(BUILD_DBoW2)
