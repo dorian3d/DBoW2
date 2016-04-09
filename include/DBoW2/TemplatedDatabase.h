@@ -25,8 +25,6 @@
 
 #include <DUtils/DUtils.h>
 
-using namespace std;
-
 namespace DBoW2 {
 
 // For query functions
@@ -131,7 +129,7 @@ public:
    * @param fvec if given, the vector of nodes and feature indexes is returned
    * @return id of new entry
    */
-  EntryId add(const vector<TDescriptor> &features,
+  EntryId add(const std::vector<TDescriptor> &features,
     BowVector *bowvec = NULL, FeatureVector *fvec = NULL);
 
   /**
@@ -175,7 +173,7 @@ public:
    * @param max_id only entries with id <= max_id are returned in ret. 
    *   < 0 means all
    */
-  void query(const vector<TDescriptor> &features, QueryResults &ret,
+  void query(const std::vector<TDescriptor> &features, QueryResults &ret,
     int max_results = 1, int max_id = -1) const;
   
   /**
@@ -201,13 +199,13 @@ public:
    * Stores the database in a file
    * @param filename
    */
-  void save(const string &filename) const;
+  void save(const std::string &filename) const;
   
   /**
    * Loads the database from a file
    * @param filename
    */
-  void load(const string &filename);
+  void load(const std::string &filename);
   
   /** 
    * Stores the database in the given file storage structure
@@ -402,7 +400,7 @@ TemplatedDatabase<TDescriptor,F>& TemplatedDatabase<TDescriptor,F>::operator=
 
 template<class TDescriptor, class F>
 EntryId TemplatedDatabase<TDescriptor, F>::add(
-  const vector<TDescriptor> &features,
+  const std::vector<TDescriptor> &features,
   BowVector *bowvec, FeatureVector *fvec)
 {
   BowVector aux;
@@ -440,7 +438,7 @@ EntryId TemplatedDatabase<TDescriptor, F>::add(const BowVector &v,
   EntryId entry_id = m_nentries++;
 
   BowVector::const_iterator vit;
-  vector<unsigned int>::const_iterator iit;
+  std::vector<unsigned int>::const_iterator iit;
 
   if(m_use_di)
   {
@@ -569,7 +567,7 @@ inline int TemplatedDatabase<TDescriptor, F>::getDirectIndexLevels() const
 
 template<class TDescriptor, class F>
 void TemplatedDatabase<TDescriptor, F>::query(
-  const vector<TDescriptor> &features, 
+  const std::vector<TDescriptor> &features,
   QueryResults &ret, int max_results, int max_id) const
 {
   BowVector vec;
@@ -623,8 +621,8 @@ void TemplatedDatabase<TDescriptor, F>::queryL1(const BowVector &vec,
   BowVector::const_iterator vit;
   typename IFRow::const_iterator rit;
     
-  map<EntryId, double> pairs;
-  map<EntryId, double>::iterator pit;
+  std::map<EntryId, double> pairs;
+  std::map<EntryId, double>::iterator pit;
   
   for(vit = vec.begin(); vit != vec.end(); ++vit)
   {
@@ -652,7 +650,7 @@ void TemplatedDatabase<TDescriptor, F>::queryL1(const BowVector &vec,
         else
         {
           pairs.insert(pit, 
-            map<EntryId, double>::value_type(entry_id, value));
+            std::map<EntryId, double>::value_type(entry_id, value));
         }
       }
       
@@ -669,7 +667,7 @@ void TemplatedDatabase<TDescriptor, F>::queryL1(const BowVector &vec,
   // resulting "scores" are now in [-2 best .. 0 worst]	
   
   // sort vector in ascending order of score
-  sort(ret.begin(), ret.end());
+  std::sort(ret.begin(), ret.end());
   // (ret is inverted now --the lower the better--)
 
   // cut vector
@@ -695,8 +693,8 @@ void TemplatedDatabase<TDescriptor, F>::queryL2(const BowVector &vec,
   BowVector::const_iterator vit;
   typename IFRow::const_iterator rit;
   
-  map<EntryId, double> pairs;
-  map<EntryId, double>::iterator pit;
+  std::map<EntryId, double> pairs;
+  std::map<EntryId, double>::iterator pit;
   
   //map<EntryId, int> counters;
   //map<EntryId, int>::iterator cit;
@@ -729,7 +727,7 @@ void TemplatedDatabase<TDescriptor, F>::queryL2(const BowVector &vec,
         else
         {
           pairs.insert(pit, 
-            map<EntryId, double>::value_type(entry_id, value));
+            std::map<EntryId, double>::value_type(entry_id, value));
           
           //counters.insert(cit, 
           //  map<EntryId, int>::value_type(entry_id, 1));
@@ -750,7 +748,7 @@ void TemplatedDatabase<TDescriptor, F>::queryL2(const BowVector &vec,
   // resulting "scores" are now in [-1 best .. 0 worst]	
   
   // sort vector in ascending order of score
-  sort(ret.begin(), ret.end());
+  std::sort(ret.begin(), ret.end());
   // (ret is inverted now --the lower the better--)
 
   // cut vector
@@ -783,11 +781,11 @@ void TemplatedDatabase<TDescriptor, F>::queryChiSquare(const BowVector &vec,
   BowVector::const_iterator vit;
   typename IFRow::const_iterator rit;
   
-  map<EntryId, pair<double, int> > pairs;
-  map<EntryId, pair<double, int> >::iterator pit;
+  std::map<EntryId, std::pair<double, int> > pairs;
+  std::map<EntryId, std::pair<double, int> >::iterator pit;
   
-  map<EntryId, pair<double, double> > sums; // < sum vi, sum wi >
-  map<EntryId, pair<double, double> >::iterator sit;
+  std::map<EntryId, std::pair<double, double> > sums; // < sum vi, sum wi >
+  std::map<EntryId, std::pair<double, double> >::iterator sit;
   
   // In the current implementation, we suppose vec is not normalized
   
@@ -830,14 +828,14 @@ void TemplatedDatabase<TDescriptor, F>::queryChiSquare(const BowVector &vec,
         else
         {
           pairs.insert(pit, 
-            map<EntryId, pair<double, int> >::value_type(entry_id, 
-              make_pair(value, 1) ));
+            std::map<EntryId, std::pair<double, int> >::value_type(entry_id,
+              std::make_pair(value, 1) ));
           //expected.insert(eit, 
           //  map<EntryId, double>::value_type(entry_id, dvalue));
           
           sums.insert(sit, 
-            map<EntryId, pair<double, double> >::value_type(entry_id, 
-              make_pair(qvalue, dvalue) ));
+            std::map<EntryId, std::pair<double, double> >::value_type(entry_id,
+              std::make_pair(qvalue, dvalue) ));
         }
       }
       
@@ -866,7 +864,7 @@ void TemplatedDatabase<TDescriptor, F>::queryChiSquare(const BowVector &vec,
   // we have to add +2 to the scores to obtain the chi square score
   
   // sort vector in ascending order of score
-  sort(ret.begin(), ret.end());
+  std::sort(ret.begin(), ret.end());
   // (ret is inverted now --the lower the better--)
 
   // cut vector
@@ -894,8 +892,8 @@ void TemplatedDatabase<TDescriptor, F>::queryKL(const BowVector &vec,
   BowVector::const_iterator vit;
   typename IFRow::const_iterator rit;
   
-  map<EntryId, double> pairs;
-  map<EntryId, double>::iterator pit;
+  std::map<EntryId, double> pairs;
+  std::map<EntryId, double>::iterator pit;
   
   for(vit = vec.begin(); vit != vec.end(); ++vit)
   {
@@ -924,7 +922,7 @@ void TemplatedDatabase<TDescriptor, F>::queryKL(const BowVector &vec,
         else
         {
           pairs.insert(pit, 
-            map<EntryId, double>::value_type(entry_id, value));
+            std::map<EntryId, double>::value_type(entry_id, value));
         }
       }
       
@@ -966,7 +964,7 @@ void TemplatedDatabase<TDescriptor, F>::queryKL(const BowVector &vec,
 
   // sort vector in ascending order
   // (scores are inverted now --the lower the better--)
-  sort(ret.begin(), ret.end());
+  std::sort(ret.begin(), ret.end());
 
   // cut vector
   if(max_results > 0 && (int)ret.size() > max_results)
@@ -988,8 +986,8 @@ void TemplatedDatabase<TDescriptor, F>::queryBhattacharyya(
   //map<EntryId, double> pairs;
   //map<EntryId, double>::iterator pit;
   
-  map<EntryId, pair<double, int> > pairs; // <eid, <score, counter> >
-  map<EntryId, pair<double, int> >::iterator pit;
+  std::map<EntryId, std::pair<double, int> > pairs; // <eid, <score, counter> >
+  std::map<EntryId, std::pair<double, int> >::iterator pit;
   
   for(vit = vec.begin(); vit != vec.end(); ++vit)
   {
@@ -1018,8 +1016,8 @@ void TemplatedDatabase<TDescriptor, F>::queryBhattacharyya(
         else
         {
           pairs.insert(pit, 
-            map<EntryId, pair<double, int> >::value_type(entry_id, 
-              make_pair(value, 1)));
+            std::map<EntryId, std::pair<double, int> >::value_type(entry_id,
+              std::make_pair(value, 1)));
         }
       }
       
@@ -1041,7 +1039,7 @@ void TemplatedDatabase<TDescriptor, F>::queryBhattacharyya(
   // scores are already in [0..1]
 
   // sort vector in descending order
-  sort(ret.begin(), ret.end(), Result::gt);
+  std::sort(ret.begin(), ret.end(), Result::gt);
 
   // cut vector
   if(max_results > 0 && (int)ret.size() > max_results)
@@ -1058,8 +1056,8 @@ void TemplatedDatabase<TDescriptor, F>::queryDotProduct(
   BowVector::const_iterator vit;
   typename IFRow::const_iterator rit;
   
-  map<EntryId, double> pairs;
-  map<EntryId, double>::iterator pit;
+  std::map<EntryId, double> pairs;
+  std::map<EntryId, double>::iterator pit;
   
   for(vit = vec.begin(); vit != vec.end(); ++vit)
   {
@@ -1091,7 +1089,7 @@ void TemplatedDatabase<TDescriptor, F>::queryDotProduct(
         else
         {
           pairs.insert(pit, 
-            map<EntryId, double>::value_type(entry_id, value));
+            std::map<EntryId, double>::value_type(entry_id, value));
         }
       }
       
@@ -1108,7 +1106,7 @@ void TemplatedDatabase<TDescriptor, F>::queryDotProduct(
   // scores are the greater the better
 
   // sort vector in descending order
-  sort(ret.begin(), ret.end(), Result::gt);
+  std::sort(ret.begin(), ret.end(), Result::gt);
 
   // cut vector
   if(max_results > 0 && (int)ret.size() > max_results)
@@ -1130,10 +1128,10 @@ const FeatureVector& TemplatedDatabase<TDescriptor, F>::retrieveFeatures
 // --------------------------------------------------------------------------
 
 template<class TDescriptor, class F>
-void TemplatedDatabase<TDescriptor, F>::save(const string &filename) const
+void TemplatedDatabase<TDescriptor, F>::save(const std::string &filename) const
 {
   cv::FileStorage fs(filename.c_str(), cv::FileStorage::WRITE);
-  if(!fs.isOpened()) throw string("Could not open file ") + filename;
+  if(!fs.isOpened()) throw std::string("Could not open file ") + filename;
   
   save(fs);
 }
@@ -1215,7 +1213,7 @@ void TemplatedDatabase<TDescriptor, F>::save(cv::FileStorage &fs,
     for(drit = dit->begin(); drit != dit->end(); ++drit)
     {
       NodeId nid = drit->first;
-      const vector<unsigned int>& features = drit->second;
+      const std::vector<unsigned int>& features = drit->second;
       
       // save info of last_nid
       fs << "{";
@@ -1223,7 +1221,7 @@ void TemplatedDatabase<TDescriptor, F>::save(cv::FileStorage &fs,
       // msvc++ 2010 with opencv 2.3.1 does not allow FileStorage::operator<<
       // with vectors of unsigned int
       fs << "features" << "[" 
-        << *(const vector<int>*)(&features) << "]";
+        << *(const std::vector<int>*)(&features) << "]";
       fs << "}";
     }
     
@@ -1238,10 +1236,10 @@ void TemplatedDatabase<TDescriptor, F>::save(cv::FileStorage &fs,
 // --------------------------------------------------------------------------
 
 template<class TDescriptor, class F>
-void TemplatedDatabase<TDescriptor, F>::load(const string &filename)
+void TemplatedDatabase<TDescriptor, F>::load(const std::string &filename)
 {
   cv::FileStorage fs(filename.c_str(), cv::FileStorage::READ);
-  if(!fs.isOpened()) throw string("Could not open file ") + filename;
+  if(!fs.isOpened()) throw std::string("Could not open file ") + filename;
   
   load(fs);
 }
@@ -1299,13 +1297,13 @@ void TemplatedDatabase<TDescriptor, F>::load(const cv::FileStorage &fs,
         NodeId nid = (int)fe[i]["nodeId"];
         
         dit = m_dfile[eid].insert(m_dfile[eid].end(), 
-          make_pair(nid, vector<unsigned int>() )); 
+          make_pair(nid, std::vector<unsigned int>() ));
         
         // this failed to compile with some opencv versions (2.3.1)
         //fe[i]["features"] >> dit->second;
         
         // this was ok until OpenCV 2.4.1
-        //vector<int> aux;
+        //std::vector<int> aux;
         //fe[i]["features"] >> aux; // OpenCV < 2.4.1
         //dit->second.resize(aux.size());
         //std::copy(aux.begin(), aux.end(), dit->second.begin());
