@@ -1,8 +1,25 @@
 cmake_minimum_required(VERSION 2.8)
 project(DBoW2)
+include(ExternalProject)
 
 option(BUILD_DBoW2   "Build DBoW2"            ON)
 option(BUILD_Demo    "Build demo application" ON)
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+    "MinSizeRel" "RelWithDebInfo")
+endif()
+
+if(MSVC)
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
+endif()
 
 set(HDRS
   include/DBoW2/BowVector.h           include/DBoW2/FBrief.h              include/DBoW2/FSurf64.h
@@ -13,12 +30,37 @@ set(SRCS
   src/BowVector.cpp     src/FBrief.cpp        src/FSurf64.cpp       src/FORB.cpp
   src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp)
 
+set(DEPENDENCY_DIR ${CMAKE_CURRENT_BINARY_DIR}/dependencies)
+set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
+
 find_package(OpenCV REQUIRED)
-find_package(DLib REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package(DLib QUIET 
+  PATHS ${DEPENDENCY_INSTALL_DIR})
+if(${DLib_FOUND})
+  message("DLib library found, using it from the system")
+  include_directories(${DLib_INCLUDE_DIRS})
+  add_custom_target(Dependencies)
+else(${DLib_FOUND})
+  message("DLib library not found in the system, it will be downloaded on build")
+  option(DOWNLOAD_DLib_dependency "Download DLib dependency" ON)
+  if(${DOWNLOAD_DLib_dependency})
+    ExternalProject_Add(DLib
+      PREFIX ${DEPENDENCY_DIR}
+      GIT_REPOSITORY http://github.com/dorian3d/DLib
+      INSTALL_DIR ${DEPENDENCY_INSTALL_DIR}
+      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>)
+    add_custom_target(Dependencies ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS DLib)
+  else()
+    message(SEND_ERROR "Please, activate DOWNLOAD_DLib_dependency option or download manually")
+  endif(${DOWNLOAD_DLib_dependency})
+endif(${DLib_FOUND})
 
 if(BUILD_DBoW2)
-  include_directories(include/DBoW2/ ${OpenCV_INCLUDE_DIRS} ${DLib_INCLUDE_DIRS})
   add_library(${PROJECT_NAME} SHARED ${SRCS})
+  include_directories(include/DBoW2/)
+  add_dependencies(${PROJECT_NAME} Dependencies)
   target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
 endif(BUILD_DBoW2)
 
