@@ -324,7 +324,7 @@ protected:
 template<class TDescriptor, class F>
 TemplatedDatabase<TDescriptor, F>::TemplatedDatabase
   (bool use_di, int di_levels)
-  : m_voc(NULL), m_use_di(use_di), m_dilevels(di_levels)
+  : m_voc(NULL), m_use_di(use_di), m_dilevels(di_levels), m_nentries(0)
 {
 }
 
