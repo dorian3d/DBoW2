@@ -10,7 +10,7 @@
 #include <vector>
 
 // DBoW2
-#include "DBoW2.h" // defines Surf64Vocabulary and Surf64Database
+#include "DBoW2.h" // defines OrbVocabulary and OrbDatabase
 
 #include <DUtils/DUtils.h>
 #include <DVision/DVision.h>
@@ -18,7 +18,7 @@
 // OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#include <opencv2/xfeatures2d/nonfree.hpp>
+#include <opencv2/features2d.hpp>
 
 
 using namespace DBoW2;
@@ -27,20 +27,16 @@ using namespace std;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-void loadFeatures(vector<vector<vector<float> > > &features);
-void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
-  int L);
-void testVocCreation(const vector<vector<vector<float> > > &features);
-void testDatabase(const vector<vector<vector<float> > > &features);
+void loadFeatures(vector<vector<cv::Mat > > &features);
+void changeStructure(const cv::Mat &plain, vector<cv::Mat> &out);
+void testVocCreation(const vector<vector<cv::Mat > > &features);
+void testDatabase(const vector<vector<cv::Mat > > &features);
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 // number of training images
 const int NIMAGES = 4;
-
-// extended surf gives 128-dimensional vectors
-const bool EXTENDED_SURF = false;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -54,7 +50,7 @@ void wait()
 
 int main()
 {
-  vector<vector<vector<float> > > features;
+  vector<vector<cv::Mat > > features;
   loadFeatures(features);
 
   testVocCreation(features);
@@ -68,14 +64,14 @@ int main()
 
 // ----------------------------------------------------------------------------
 
-void loadFeatures(vector<vector<vector<float> > > &features)
+void loadFeatures(vector<vector<cv::Mat > > &features)
 {
   features.clear();
   features.reserve(NIMAGES);
 
-  cv::Ptr<cv::xfeatures2d::SURF> surf = cv::xfeatures2d::SURF::create(400, 4, 2, EXTENDED_SURF);
+  cv::Ptr<cv::ORB> orb = cv::ORB::create();
 
-  cout << "Extracting SURF features..." << endl;
+  cout << "Extracting ORB features..." << endl;
   for(int i = 0; i < NIMAGES; ++i)
   {
     stringstream ss;
@@ -84,33 +80,30 @@ void loadFeatures(vector<vector<vector<float> > > &features)
     cv::Mat image = cv::imread(ss.str(), 0);
     cv::Mat mask;
     vector<cv::KeyPoint> keypoints;
-    vector<float> descriptors;
+    cv::Mat descriptors;
 
-    surf->detectAndCompute(image, mask, keypoints, descriptors);
+    orb->detectAndCompute(image, mask, keypoints, descriptors);
 
-    features.push_back(vector<vector<float> >());
-    changeStructure(descriptors, features.back(), surf->descriptorSize());
+    features.push_back(vector<cv::Mat >());
+    changeStructure(descriptors, features.back());
   }
 }
 
 // ----------------------------------------------------------------------------
 
-void changeStructure(const vector<float> &plain, vector<vector<float> > &out,
-  int L)
+void changeStructure(const cv::Mat &plain, vector<cv::Mat> &out)
 {
-  out.resize(plain.size() / L);
+  out.resize(plain.rows);
 
-  unsigned int j = 0;
-  for(unsigned int i = 0; i < plain.size(); i += L, ++j)
+  for(int i = 0; i < plain.rows; ++i)
   {
-    out[j].resize(L);
-    std::copy(plain.begin() + i, plain.begin() + i + L, out[j].begin());
+    out[i] = plain.row(i);
   }
 }
 
 // ----------------------------------------------------------------------------
 
-void testVocCreation(const vector<vector<vector<float> > > &features)
+void testVocCreation(const vector<vector<cv::Mat > > &features)
 {
   // branching factor and depth levels 
   const int k = 9;
@@ -118,7 +111,7 @@ void testVocCreation(const vector<vector<vector<float> > > &features)
   const WeightingType weight = TF_IDF;
   const ScoringType score = L1_NORM;
 
-  Surf64Vocabulary voc(k, L, weight, score);
+  OrbVocabulary voc(k, L, weight, score);
 
   cout << "Creating a small " << k << "^" << L << " vocabulary..." << endl;
   voc.create(features);
@@ -150,14 +143,14 @@ void testVocCreation(const vector<vector<vector<float> > > &features)
 
 // ----------------------------------------------------------------------------
 
-void testDatabase(const vector<vector<vector<float> > > &features)
+void testDatabase(const vector<vector<cv::Mat > > &features)
 {
   cout << "Creating a small database..." << endl;
 
   // load the vocabulary from disk
-  Surf64Vocabulary voc("small_voc.yml.gz");
+  OrbVocabulary voc("small_voc.yml.gz");
   
-  Surf64Database db(voc, false, 0); // false = do not use direct index
+  OrbDatabase db(voc, false, 0); // false = do not use direct index
   // (so ignore the last param)
   // The direct index is useful if we want to retrieve the features that 
   // belong to some vocabulary node.
@@ -197,7 +190,7 @@ void testDatabase(const vector<vector<vector<float> > > &features)
   
   // once saved, we can load it again  
   cout << "Retrieving database once again..." << endl;
-  Surf64Database db2("small_db.yml.gz");
+  OrbDatabase db2("small_db.yml.gz");
   cout << "... done! This is: " << endl << db2 << endl;
 }
 

@@ -4,7 +4,7 @@ DBoW2
 DBoW2 is an improved version of the DBow library, an open source C++ library for indexing and converting images into a bag-of-word representation. It implements a hierarchical tree for approximating nearest neighbours in the image feature space and creating a visual vocabulary. DBoW2 also implements an image database with inverted and direct files to index images and enabling quick queries and feature comparisons. The main differences with the previous DBow library are:
 
   * DBoW2 classes are templated, so it can work with any type of descriptor.
-  * DBoW2 is shipped with classes to directly work with SURF64 or BRIEF descriptors.
+  * DBoW2 is shipped with classes to directly work with ORB or BRIEF descriptors.
   * DBoW2 adds a direct file to the image database to do fast feature comparison. This is used by DLoopDetector.
   * DBoW2 does not use a binary format any longer. On the other hand, it uses the OpenCV storage system to save vocabularies and databases. This means that these files can be stored as plain text in YAML format, making compatibility easier, or compressed in gunzip format (.gz) to reduce disk usage.
   * Some pieces of code have been rewritten to optimize speed. The interface of DBoW2 has been simplified.
@@ -75,10 +75,10 @@ DBoW2 has two main classes: `TemplatedVocabulary` and `TemplatedDatabase`. These
 
 Two classes must be provided: `TDescriptor` is the data type of a single descriptor vector, and `F`, a class with the functions to manipulate descriptors, derived from `FClass`.
 
-For example, to work with SURF descriptors, `TDescriptor` is defined as `std::vector<float>`, where each vector contains 64 or 128 float values. When features are extracted from an image, a `std::vector<TDescriptor>` must be obtained. In the case of BRIEF, `TDescriptor` is defined as `boost::dynamic_bitset<>`.
+For example, to work with ORB descriptors, `TDescriptor` is defined as `cv::Mat` (of type `CV_8UC1`), which is a single row that contains 32 8-bit values. When features are extracted from an image, a `std::vector<TDescriptor>` must be obtained. In the case of BRIEF, `TDescriptor` is defined as `boost::dynamic_bitset<>`.
 
-The `F` parameter is the name of a class that implements the functions defined in `FClass`. These functions get `TDescriptor` data and compute some result. Classes to deal with SURF and BRIEF descriptors are already included in DBoW2. (`FSurf64`, `FBrief`).
+The `F` parameter is the name of a class that implements the functions defined in `FClass`. These functions get `TDescriptor` data and compute some result. Classes to deal with ORB and BRIEF descriptors are already included in DBoW2. (`FORB`, `FBrief`).
 
 ### Predefined Vocabularies and Databases
 
-To make it easier to use, DBoW2 defines two kinds of vocabularies and databases: `Surf64Vocabulary`, `Surf64Database`, `BriefVocabulary`, `BriefDatabase`. Please, check the demo application to see how they are created and used.
+To make it easier to use, DBoW2 defines two kinds of vocabularies and databases: `OrbVocabulary`, `OrbDatabase`, `BriefVocabulary`, `BriefDatabase`. Please, check the demo application to see how they are created and used.

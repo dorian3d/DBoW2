@@ -39,17 +39,6 @@
   }
  </pre>
  *
- * \section license License
- * This file is licensed under a Creative Commons 
- * Attribution-NonCommercial-ShareAlike 3.0 license. 
- * This file can be freely used and users can use, download and edit this file 
- * provided that credit is attributed to the original author. No users are 
- * permitted to use this file for commercial purposes unless explicit permission
- * is given by the original author. Derivative works must be licensed using the
- * same or similar license.
- * Check http://creativecommons.org/licenses/by-nc-sa/3.0/ to obtain further
- * details.
- *
  */
 
 #ifndef __D_T_DBOW2__
@@ -65,17 +54,16 @@ namespace DBoW2
 #include "BowVector.h"
 #include "FeatureVector.h"
 #include "QueryResults.h"
-#include "FSurf64.h"
 #include "FBrief.h"
 #include "FORB.h"
 
-/// SURF64 Vocabulary
-typedef DBoW2::TemplatedVocabulary<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
-  Surf64Vocabulary;
+/// ORB Vocabulary
+typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB> 
+  OrbVocabulary;
 
-/// SURF64 Database
-typedef DBoW2::TemplatedDatabase<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
-  Surf64Database;
+/// FORB Database
+typedef DBoW2::TemplatedDatabase<DBoW2::FORB::TDescriptor, DBoW2::FORB> 
+  OrbDatabase;
   
 /// BRIEF Vocabulary
 typedef DBoW2::TemplatedVocabulary<DBoW2::FBrief::TDescriptor, DBoW2::FBrief> 
