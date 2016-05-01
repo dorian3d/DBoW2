@@ -10,7 +10,7 @@
 #ifndef __D_T_F_SURF_64__
 #define __D_T_F_SURF_64__
 
-#include <opencv/cv.h>
+#include <opencv2/core.hpp>
 #include <vector>
 #include <string>
 

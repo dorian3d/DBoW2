@@ -34,7 +34,7 @@ If you use this software in an academic work, please cite:
 
 ## Installation notes
 
-DBoW2 requires [DLib](https://github.com/dorian3d/DLib), which you can find in [my repository](https://github.com/dorian3d/DLib).
+DBoW2 requires [DLib](https://github.com/dorian3d/DLib), which is automatically installed if it cannot be found in the system. You can also find it in [my repository](https://github.com/dorian3d/DLib).
 
 DBoW2 requires OpenCV and the `Boost::dynamic_bitset` class in order to use the BRIEF version. You can install Boost by typing:
 

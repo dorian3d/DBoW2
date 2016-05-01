@@ -49,7 +49,7 @@ enum ScoringType
   CHI_SQUARE,
   KL,
   BHATTACHARYYA,
-  DOT_PRODUCT,
+  DOT_PRODUCT
 };
 
 /// Vector of words to represent images

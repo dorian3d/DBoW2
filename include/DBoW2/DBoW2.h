@@ -16,7 +16,7 @@
  * Written by Dorian Galvez-Lopez,
  * University of Zaragoza
  * 
- * Check my website to obtain updates: http://webdiis.unizar.es/~dorian
+ * Check my website to obtain updates: http://doriangalvez.com
  *
  * \section requirements Requirements
  * This library requires the DUtils, DUtilsCV, DVision and OpenCV libraries,
