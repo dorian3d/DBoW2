@@ -36,6 +36,9 @@ set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
 find_package(DLib QUIET 
   PATHS ${DEPENDENCY_INSTALL_DIR})
 if(${DLib_FOUND})
