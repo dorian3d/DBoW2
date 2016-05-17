@@ -315,7 +315,7 @@ protected:
   DirectFile m_dfile;
   
   /// Number of valid entries in m_dfile
-  int m_nentries;
+  int m_nentries = 0;
   
 };
 
