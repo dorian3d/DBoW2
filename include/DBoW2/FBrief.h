@@ -13,9 +13,8 @@
 #include <opencv2/core.hpp>
 #include <vector>
 #include <string>
-
+#include <boost/dynamic_bitset.hpp>
 #include "FClass.h"
-#include <DVision/DVision.h>
 
 namespace DBoW2 {
 
@@ -24,7 +23,7 @@ class FBrief: protected FClass
 {
 public:
 
-  typedef DVision::BRIEF::bitset TDescriptor;
+  typedef  boost::dynamic_bitset<> TDescriptor;
   typedef const TDescriptor *pDescriptor;
 
   /**

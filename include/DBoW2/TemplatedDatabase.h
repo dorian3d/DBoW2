@@ -23,7 +23,6 @@
 #include "BowVector.h"
 #include "FeatureVector.h"
 
-#include <DUtils/DUtils.h>
 
 namespace DBoW2 {
 

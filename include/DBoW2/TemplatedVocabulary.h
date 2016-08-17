@@ -22,9 +22,7 @@
 #include "FeatureVector.h"
 #include "BowVector.h"
 #include "ScoringObject.h"
-
-#include <DUtils/DUtils.h>
-
+#include <limits>
 namespace DBoW2 {
 
 /// @param TDescriptor class of descriptor
@@ -824,7 +822,8 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
   // 5. Now that the initial centers have been chosen, proceed using standard k-means 
   //    clustering.
 
-  DUtils::Random::SeedRandOnce();
+
+//  DUtils::Random::SeedRandOnce();
 
   clusters.resize(0);
   clusters.reserve(m_k);
@@ -832,7 +831,7 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
   
   // 1.
   
-  int ifeature = DUtils::Random::RandomInt(0, pfeatures.size()-1);
+  int ifeature = rand()% pfeatures.size();//DUtils::Random::RandomInt(0, pfeatures.size()-1);
   
   // create first cluster
   clusters.push_back(*pfeatures[ifeature]);
@@ -867,7 +866,8 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
       double cut_d;
       do
       {
-        cut_d = DUtils::Random::RandomValue<double>(0, dist_sum);
+
+        cut_d = (double(rand())/ double(RAND_MAX))* dist_sum;
       } while(cut_d == 0.0);
 
       double d_up_now = 0;
