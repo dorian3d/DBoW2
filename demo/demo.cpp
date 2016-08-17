@@ -12,8 +12,6 @@
 // DBoW2
 #include "DBoW2.h" // defines Surf64Vocabulary and Surf64Database
 
-#include <DUtils/DUtils.h>
-#include <DVision/DVision.h>
 
 // OpenCV
 #include <opencv2/core.hpp>
@@ -22,7 +20,6 @@
 
 
 using namespace DBoW2;
-using namespace DUtils;
 using namespace std;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
