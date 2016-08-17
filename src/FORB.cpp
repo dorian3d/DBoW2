@@ -13,8 +13,6 @@
 #include <stdint.h>
 #include <limits.h>
 
-#include <DUtils/DUtils.h>
-#include <DVision/DVision.h>
 #include "FORB.h"
 
 using namespace std;
