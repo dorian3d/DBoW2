@@ -17,7 +17,8 @@ DBoW3 is an improved version of the DBow2 library, an open source C++ library fo
 
 If you use this software in an academic work, please cite:
 
-```@online{Fbow, author = {Rafael Muñoz-Salinas}, 
+```
+@online{Fbow, author = {Rafael Muñoz-Salinas}, 
    title = {{DBoW3} DBoW3}, 
   year = 2017, 
   url = {https://github.com/rmsalinas/DBoW2}, 
@@ -26,7 +27,7 @@ If you use this software in an academic work, please cite:
 ```
 and
 ```
-   @ARTICLE{GalvezTRO12,
+@ARTICLE{GalvezTRO12,
       author={G\'alvez-L\'opez, Dorian and Tard\'os, J. D.},
       journal={IEEE Transactions on Robotics},
       title={Bags of Binary Words for Fast Place Recognition in Image Sequences},
