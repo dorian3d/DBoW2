@@ -17,12 +17,12 @@ DBoW3 is an improved version of the DBow2 library, an open source C++ library fo
 
 If you use this software in an academic work, please cite:
 
-@online{Fbow, author = {Rafael Muñoz-Salinas}, 
+ * @online{Fbow, author = {Rafael Muñoz-Salinas}, 
  title = {{DBoW3} DBoW3}, 
  year = 2017, 
  url = {https://github.com/rmsalinas/DBoW2}, 
  urldate = {2017-02-17} 
-}
+ }
 
 and
 
