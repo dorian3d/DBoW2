@@ -10,10 +10,9 @@
 #ifndef __D_T_BOW_VECTOR__
 #define __D_T_BOW_VECTOR__
 
-#include <iostream>
 #include <map>
 #include <vector>
-
+#include "exports.h"
 namespace DBoW2 {
 
 /// Id of words
@@ -53,7 +52,7 @@ enum ScoringType
 };
 
 /// Vector of words to represent images
-class BowVector: 
+class DBOW_API BowVector:
 	public std::map<WordId, WordValue>
 {
 public:

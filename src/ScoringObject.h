@@ -11,11 +11,11 @@
 #define __D_T_SCORING_OBJECT__
 
 #include "BowVector.h"
-
-namespace DBoW2 {
+#include "exports.h"
+namespace  DBoW2 {
 
 /// Base class of scoring functions
-class GeneralScoring
+class  DBOW_API GeneralScoring
 {
 public:
   /**

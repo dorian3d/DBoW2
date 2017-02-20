@@ -11,14 +11,14 @@
 #define __D_T_QUERY_RESULTS__
 
 #include <vector>
-
+#include "exports.h"
 namespace DBoW2 {
 
 /// Id of entries of the database
 typedef unsigned int EntryId;
 
 /// Single result of a query
-class Result
+class DBOW_API Result
 {
 public:
   
@@ -179,7 +179,7 @@ public:
    * @param os ostream
    * @param ret QueryResults to print
    */
-  friend std::ostream & operator<<(std::ostream& os, const QueryResults& ret );
+  DBOW_API friend std::ostream & operator<<(std::ostream& os, const QueryResults& ret );
   
   /**
    * Saves a matlab file with the results 

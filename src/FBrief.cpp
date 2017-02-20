@@ -11,7 +11,6 @@
 #include <string>
 #include <sstream>
 
-#include <DVision/DVision.h>
 #include "FBrief.h"
 
 using namespace std;
@@ -54,7 +53,7 @@ void FBrief::meanValue(const std::vector<FBrief::pDescriptor> &descriptors,
 double FBrief::distance(const FBrief::TDescriptor &a, 
   const FBrief::TDescriptor &b)
 {
-  return (double)DVision::BRIEF::distance(a, b);
+  return (double) (a^b).count();// DVision::BRIEF::distance(a, b);
 }
 
 // --------------------------------------------------------------------------

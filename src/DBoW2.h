@@ -19,7 +19,7 @@
  * Check my website to obtain updates: http://doriangalvez.com
  *
  * \section requirements Requirements
- * This library requires the DUtils, DUtilsCV, DVision and OpenCV libraries,
+ * This library requires the   OpenCV libraries,
  * as well as the boost::dynamic_bitset class.
  *
  * \section citation Citation
@@ -56,34 +56,14 @@
 #define __D_T_DBOW2__
 
 /// Includes all the data structures to manage vocabularies and image databases
-namespace DBoW2
-{
-}
 
-#include "TemplatedVocabulary.h"
-#include "TemplatedDatabase.h"
+#include "Vocabulary.h"
+#include "Database.h"
 #include "BowVector.h"
 #include "FeatureVector.h"
 #include "QueryResults.h"
-#include "FSurf64.h"
-#include "FBrief.h"
-#include "FORB.h"
 
-/// SURF64 Vocabulary
-typedef DBoW2::TemplatedVocabulary<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
-  Surf64Vocabulary;
 
-/// SURF64 Database
-typedef DBoW2::TemplatedDatabase<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
-  Surf64Database;
-  
-/// BRIEF Vocabulary
-typedef DBoW2::TemplatedVocabulary<DBoW2::FBrief::TDescriptor, DBoW2::FBrief> 
-  BriefVocabulary;
-
-/// BRIEF Database
-typedef DBoW2::TemplatedDatabase<DBoW2::FBrief::TDescriptor, DBoW2::FBrief> 
-  BriefDatabase;
 
 #endif
 
