@@ -22,12 +22,12 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 set(HDRS
-  include/DBoW2/BowVector.h           include/DBoW2/FBrief.h              include/DBoW2/FSurf64.h
+  include/DBoW2/BowVector.h           include/DBoW2/FBrief.h
   include/DBoW2/QueryResults.h        include/DBoW2/TemplatedDatabase.h   include/DBoW2/FORB.h
   include/DBoW2/DBoW2.h               include/DBoW2/FClass.h              include/DBoW2/FeatureVector.h
   include/DBoW2/ScoringObject.h       include/DBoW2/TemplatedVocabulary.h)
 set(SRCS 
-  src/BowVector.cpp     src/FBrief.cpp        src/FSurf64.cpp       src/FORB.cpp
+  src/BowVector.cpp     src/FBrief.cpp        src/FORB.cpp
   src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp)
 
 set(DEPENDENCY_DIR ${CMAKE_CURRENT_BINARY_DIR}/dependencies)
@@ -52,7 +52,7 @@ else(${DLib_FOUND})
     ExternalProject_Add(DLib
       PREFIX ${DEPENDENCY_DIR}
       GIT_REPOSITORY http://github.com/dorian3d/DLib
-      GIT_TAG v1.1-nonfree
+      GIT_TAG v1.1-free
       INSTALL_DIR ${DEPENDENCY_INSTALL_DIR}
       CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>)
     add_custom_target(Dependencies ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS DLib)
