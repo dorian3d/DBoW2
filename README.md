@@ -44,6 +44,9 @@ and
     }
 ```
 
+## About this version
+
+The version of the code in the "contrib/v1.1-free-enhancement-rmsalinas" branch is a contribution by Rafael Muñoz-Salinas (see [PR #18](https://github.com/dorian3d/DBoW2/pull/18)).
 
 ## Installation notes
  
