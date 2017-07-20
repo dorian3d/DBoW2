@@ -52,7 +52,7 @@ else(${DLib_FOUND})
     ExternalProject_Add(DLib
       PREFIX ${DEPENDENCY_DIR}
       GIT_REPOSITORY http://github.com/dorian3d/DLib
-      GIT_TAG v1.1-free
+      GIT_TAG master
       INSTALL_DIR ${DEPENDENCY_INSTALL_DIR}
       CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>)
     add_custom_target(Dependencies ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS DLib)
