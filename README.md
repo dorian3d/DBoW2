@@ -32,6 +32,10 @@ If you use this software in an academic work, please cite:
     }
 }
 
+## About this version
+
+The version of the code in the "contrib/v1.0-sift-thierrymalon" branch is a contribution by Thierry Malone and Simone Gasparini (see [PR #3](https://github.com/dorian3d/DBoW2/pull/3)).
+
 ## Building
 
 Check dependencies and compilation instruction in the [BUILD](BUILD.md) file.
