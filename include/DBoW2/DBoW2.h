@@ -73,5 +73,13 @@ typedef DBoW2::TemplatedVocabulary<DBoW2::FBrief::TDescriptor, DBoW2::FBrief>
 typedef DBoW2::TemplatedDatabase<DBoW2::FBrief::TDescriptor, DBoW2::FBrief> 
   BriefDatabase;
 
+/// ORB Vocabulary
+typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB> 
+  ORBVocabulary;
+
+/// ORB Database
+typedef DBoW2::TemplatedDatabase<DBoW2::FORB::TDescriptor, DBoW2::FORB> 
+  ORBDatabase;
+
 #endif
 
