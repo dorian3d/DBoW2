@@ -62,7 +62,7 @@ else(${DLib_FOUND})
 endif(${DLib_FOUND})
 
 if(BUILD_DBoW2)
-  add_library(${PROJECT_NAME} SHARED ${SRCS})
+  add_library(${PROJECT_NAME} STATIC ${SRCS})
   include_directories(include/DBoW2/)
   add_dependencies(${PROJECT_NAME} Dependencies)
   target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
