@@ -2,8 +2,27 @@ cmake_minimum_required(VERSION 2.8)
 project(DBoW2)
 include(ExternalProject)
 
-option(BUILD_DBoW2   "Build DBoW2"            ON)
-option(BUILD_Demo    "Build demo application" ON)
+option(BUILD_DBoW2   "Build DBoW2"             ON)
+option(BUILD_Demo    "Build demo application"  ON)
+option(BUILD_SURF    "Build SURF vocabulary"   ON)
+option(BUILD_CNN     "Build CNN vocabulary"    ON)
+
+
+# Check C++11 or C++0x support
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+   add_definitions(-DCOMPILEDWITHC11)
+   message(STATUS "Using flag -std=c++11.")
+elseif(COMPILER_SUPPORTS_CXX0X)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+   add_definitions(-DCOMPILEDWITHC0X)
+   message(STATUS "Using flag -std=c++0x.")
+else()
+   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -23,15 +42,20 @@ endif()
 
 set(HDRS
   include/DBoW2/BowVector.h           include/DBoW2/FBrief.h
-  include/DBoW2/QueryResults.h        include/DBoW2/TemplatedDatabase.h   include/DBoW2/FORB.h
-  include/DBoW2/DBoW2.h               include/DBoW2/FClass.h              include/DBoW2/FeatureVector.h
-  include/DBoW2/ScoringObject.h       include/DBoW2/TemplatedVocabulary.h)
+  include/DBoW2/QueryResults.h        include/DBoW2/TemplatedDatabase.h
+  include/DBoW2/FORB.h                include/DBoW2/DBoW2.h               
+  include/DBoW2/FClass.h              include/DBoW2/FeatureVector.h
+  include/DBoW2/ScoringObject.h       include/DBoW2/TemplatedVocabulary_ORB_SLAM.h  
+  include/DBoW2/FCNN.h                include/DBoW2/FSurf64.h)
 set(SRCS 
   src/BowVector.cpp     src/FBrief.cpp        src/FORB.cpp
-  src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp)
+  src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp
+  src/FCNN.cpp          src/FSurf64.cpp)
 
 set(DEPENDENCY_DIR ${CMAKE_CURRENT_BINARY_DIR}/dependencies)
 set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
+
+
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -61,6 +85,8 @@ else(${DLib_FOUND})
   endif(${DOWNLOAD_DLib_dependency})
 endif(${DLib_FOUND})
 
+set(DYLD_FALLBACK_LIBRARY_PATH ${DEPENDENCY_INSTALL_DIR}/lib)
+
 if(BUILD_DBoW2)
   add_library(${PROJECT_NAME} SHARED ${SRCS})
   include_directories(include/DBoW2/)
@@ -72,6 +98,16 @@ if(BUILD_Demo)
   add_executable(demo demo/demo.cpp)
   target_link_libraries(demo ${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
   file(COPY demo/images DESTINATION ${CMAKE_BINARY_DIR}/)
+endif(BUILD_Demo)
+
+if(BUILD_SURF)
+  add_executable(createSURFvoc createVoc/createSURFvoc.cpp)
+  target_link_libraries(createSURFvoc ${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
+endif(BUILD_Demo)
+
+if(BUILD_CNN)
+  add_executable(createCNNvoc createVoc/createCNNvoc.cpp)
+  target_link_libraries(createCNNvoc ${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
 endif(BUILD_Demo)
 
 configure_file(src/DBoW2.cmake.in

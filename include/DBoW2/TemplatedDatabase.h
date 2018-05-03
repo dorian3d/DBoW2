@@ -17,7 +17,7 @@
 #include <list>
 #include <set>
 
-#include "TemplatedVocabulary.h"
+#include "TemplatedVocabulary_ORB_SLAM.h"
 #include "QueryResults.h"
 #include "ScoringObject.h"
 #include "BowVector.h"
