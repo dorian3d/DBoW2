@@ -3,13 +3,11 @@
  */
 
 // Read descriptors from file
-#include <iostream>
 #include <fstream>
 #include <cstdint>
 #include <stdexcept>
 #include <cstring>
 #include <array>
-#include <vector>
 #include <unistd.h>
 
 // standard
@@ -75,6 +73,8 @@ int main()
 
   loadFeatures(features);
 
+  wait();
+
   createVoc(features);
 
   return 0;
@@ -108,7 +108,7 @@ void loadFeatures(std::vector<std::vector<FCNN::TDescriptor > > &descriptors)
     while( !f.eof() )
     {
       std::vector<FCNN::TDescriptor> vDescriptorsFromOneFrame;
-      while( !stop && !f.eof())
+      while(!f.eof())
       {
 
         // Read (x,y)-coordinate of feature
@@ -116,6 +116,7 @@ void loadFeatures(std::vector<std::vector<FCNN::TDescriptor > > &descriptors)
         int y;
         f.read(reinterpret_cast<char*>(&x), sizeof(std::int32_t));
         f.read(reinterpret_cast<char*>(&y), sizeof(std::int32_t));
+
         if ( x==-1 || y==-1)
         {
           break;
@@ -129,35 +130,34 @@ void loadFeatures(std::vector<std::vector<FCNN::TDescriptor > > &descriptors)
         for (auto i = 0; i < FCNN::L; ++i) {
             float t;
             f.read(reinterpret_cast<char *>(&t), sizeof(t));
-            if (!f) { 
-              std::cout << std::endl <<"error: ";
-              std::cout <<t <<" ";
-              stop = true;
-              break;
-             }
-            descriptor[i] = t;
-            //std::cout <<t <<" ";
+            if (!f) { throw std::runtime_error{std::strerror(errno)}; }
+            descriptor.push_back(t);
         }
         nDescriptors +=1;
-        //std::cout << std::endl;
+
+
         // Save feature in vector of features
         vDescriptorsFromOneFrame.push_back(descriptor);
       }
-      stop = false;
       nFrames +=1;
       nDescriptors = 0;
-      descriptors.push_back(vDescriptorsFromOneFrame);
+      if (!vDescriptorsFromOneFrame.empty())
+      {
+        descriptors.push_back(vDescriptorsFromOneFrame);
+      }
 
       // Print status
       if (nFrames % 4000 == 0)
       {
         std::cout <<std::endl<<"["<<nFrames<<"/"<<NIMAGES<<"]";
       }
-      if (nFrames % 80 == 0)
+      if (nFrames % 200 == 0)
       {
         std::cout <<"#"<< std::flush;
       }
     }
+
+    std::cout << "Done"<< std::endl;
 }
 
 // ----------------------------------------------------------------------------
@@ -172,16 +172,25 @@ void createVoc(const std::vector<std::vector<FCNN::TDescriptor > > &features)
 
   CNNVocabulary voc(k, L, weight, score);
 
-  std::cout<<std::endl << "Creating a small " << k << "^" << L << " vocabulary..." << std::endl;
-  std::cout<<std::endl << "This will take some time..." << std::endl;
+  std::cout<<std::endl << "Creating a small " << k << "^" << L << " vocabulary:" << std::endl;
   voc.create(features);
-  std::cout << "... done!" << std::endl;
+  std::cout << "Done" << std::endl;
 
   std::cout << "Vocabulary information: " << std::endl
   << voc << std::endl << std::endl;
 
+  // save the vocabulary to disk
+  std::string vocName = "cnn_voc";
+
+  std::cout << std::endl << "Saving vocabulary as " + vocName + ".txt  and " + vocName + ".yml.gz" << std::endl;
+  voc.save(vocName + ".yml.gz");
+  voc.saveToTextFile(vocName + ".txt");
+  
+  std::cout << "Done" << std::endl;
+
+
   // lets do something with this vocabulary
-  std::cout << "Matching 4 first images against themselves (0 low, 1 high): " << std::endl;
+  std::cout << std::endl << "Small test: Matching 4 first images against themselves (0 low, 1 high): " << std::endl;
   BowVector v1, v2;
   for(int i = 0; i < 4; i++)
   {
@@ -194,15 +203,6 @@ void createVoc(const std::vector<std::vector<FCNN::TDescriptor > > &features)
       std::cout << "Image " << i << " vs Image " << j << ": " << score << std::endl;
     }
   }
-
-  // save the vocabulary to disk
-  
-  std::cout << std::endl << "Saving vocabulary..." << std::endl;
-  voc.save("cnn_voc.yml.gz");
-
-  voc.saveToTextFile("cnn_voc.txt");
-  
-  std::cout << "Done" << std::endl;
 
 }
 

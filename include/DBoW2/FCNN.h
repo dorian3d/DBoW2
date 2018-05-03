@@ -28,7 +28,7 @@ public:
   /// Pointer to a single descriptor
   typedef const TDescriptor *pDescriptor;
   /// Descriptor length
-  static const int L = 256; 
+  static const int L = 512; 
 
   /**
    * Returns the number of dimensions of the descriptor space

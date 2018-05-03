@@ -543,6 +543,7 @@ void TemplatedVocabulary<TDescriptor,F>::create(
 	int expected_nodes = 
 		(int)((pow((double)m_k, (double)m_L + 1) - 1)/(m_k - 1));
 
+  std::cout << "\t - Expected nodes = " << expected_nodes << std::endl << std::flush;
   m_nodes.reserve(expected_nodes); // avoid allocations when creating the tree
   
   
@@ -551,15 +552,19 @@ void TemplatedVocabulary<TDescriptor,F>::create(
 
 
   // create root  
+  std::cout << "\t - Creating the root..." << std::endl;
   m_nodes.push_back(Node(0)); // root
   
   // create the tree
+  std::cout << "\t - Creating the tree..." << std::endl;
   HKmeansStep(0, features, 1);
 
   // create the words
+  std::cout << "\t - Creating the words..." << std::endl;
   createWords();
 
   // and set the weight of each node of the tree
+  std::cout << "\t - Setting the weight of each node..." << std::endl;
   setNodeWeights(training_features);
   
 }
