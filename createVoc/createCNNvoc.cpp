@@ -73,8 +73,6 @@ int main()
 
   loadFeatures(features);
 
-  wait();
-
   createVoc(features);
 
   return 0;
@@ -182,9 +180,32 @@ void createVoc(const std::vector<std::vector<FCNN::TDescriptor > > &features)
   // save the vocabulary to disk
   std::string vocName = "cnn_voc";
 
-  std::cout << std::endl << "Saving vocabulary as " + vocName + ".txt  and " + vocName + ".yml.gz" << std::endl;
-  voc.save(vocName + ".yml.gz");
-  voc.saveToTextFile(vocName + ".txt");
+  std::cout << std::endl << "Saving vocabulary as " + vocName + ".txt" << std::endl;
+  try{
+    voc.saveToTextFile(vocName + ".txt");
+  } catch (const std::exception& e) {
+    std::cout << "Exception: " << e.what() << std::endl;
+  } catch (...) {
+    std::cout << "An unknown exception occurred" << std::endl;
+  }
+  
+  std::cout << std::endl << "Saving vocabulary as " + vocName + ".voc" << std::endl;
+  try{
+    voc.save(vocName + ".voc");
+  } catch (const std::exception& e) {
+    std::cout << "Exception: " << e.what() << std::endl;
+  } catch (...) {
+    std::cout << "An unknown exception occurred" << std::endl;
+  }
+
+  std::cout << std::endl << "Saving vocabulary as " + vocName + ".yml.gz" << std::endl;
+  try{
+    voc.save(vocName + ".yml.gz");
+  } catch (const std::exception& e) {
+    std::cout << "Exception: " << e.what() << std::endl;
+  } catch (...) {
+    std::cout << "An unknown exception occurred" << std::endl;
+  }
   
   std::cout << "Done" << std::endl;
 
