@@ -4,7 +4,7 @@ include(ExternalProject)
 
 option(BUILD_DBoW2   "Build DBoW2"             ON)
 option(BUILD_Demo    "Build demo application"  ON)
-option(BUILD_SURF    "Build SURF vocabulary"   ON)
+option(BUILD_SURF    "Build SURF vocabulary"   OFF)
 option(BUILD_CNN     "Build CNN vocabulary"    ON)
 
 
@@ -103,12 +103,12 @@ endif(BUILD_Demo)
 if(BUILD_SURF)
   add_executable(createSURFvoc createVoc/createSURFvoc.cpp)
   target_link_libraries(createSURFvoc ${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
-endif(BUILD_Demo)
+endif(BUILD_SURF)
 
 if(BUILD_CNN)
   add_executable(createCNNvoc createVoc/createCNNvoc.cpp)
   target_link_libraries(createCNNvoc ${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
-endif(BUILD_Demo)
+endif(BUILD_CNN)
 
 configure_file(src/DBoW2.cmake.in
   "${PROJECT_BINARY_DIR}/DBoW2Config.cmake" @ONLY)

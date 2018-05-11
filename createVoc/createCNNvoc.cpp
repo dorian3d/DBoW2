@@ -36,11 +36,9 @@
 
 
 #include "opencv2/core/ocl.hpp"
-#include <opencv2/xfeatures2d.hpp>
 
 
 using namespace cv;
-using namespace cv::xfeatures2d;
 using namespace DBoW2;
 using namespace DUtils;
 
