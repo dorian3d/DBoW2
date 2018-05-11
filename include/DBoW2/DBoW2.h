@@ -49,13 +49,15 @@ namespace DBoW2
 {
 }
 
-#include "TemplatedVocabulary.h"
+#include "TemplatedVocabulary_ORB_SLAM.h"
 #include "TemplatedDatabase.h"
 #include "BowVector.h"
 #include "FeatureVector.h"
 #include "QueryResults.h"
 #include "FBrief.h"
 #include "FORB.h"
+#include "FSurf64.h"
+#include "FCNN.h"
 
 /// ORB Vocabulary
 typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB> 
@@ -73,5 +75,16 @@ typedef DBoW2::TemplatedVocabulary<DBoW2::FBrief::TDescriptor, DBoW2::FBrief>
 typedef DBoW2::TemplatedDatabase<DBoW2::FBrief::TDescriptor, DBoW2::FBrief> 
   BriefDatabase;
 
-#endif
+/// SURF Vocabulary
+typedef DBoW2::TemplatedVocabulary<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
+  SURF64Vocabulary;
 
+/// SURF Database
+typedef DBoW2::TemplatedDatabase<DBoW2::FSurf64::TDescriptor, DBoW2::FSurf64> 
+  SURF64Database;
+
+/// CNN-feature Vocabulary
+typedef DBoW2::TemplatedVocabulary<DBoW2::FCNN::TDescriptor, DBoW2::FCNN>
+  CNNVocabulary;
+
+#endif
