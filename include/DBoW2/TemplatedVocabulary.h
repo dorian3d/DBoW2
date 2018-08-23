@@ -11,7 +11,7 @@
 #define __D_T_TEMPLATED_VOCABULARY__
 
 #include <cassert>
-
+#include <cstdlib>
 #include <vector>
 #include <numeric>
 #include <fstream>
@@ -22,8 +22,6 @@
 #include "FeatureVector.h"
 #include "BowVector.h"
 #include "ScoringObject.h"
-
-#include <DUtils/DUtils.h>
 
 namespace DBoW2 {
 
@@ -380,6 +378,28 @@ protected:
    */
   void setNodeWeights(const std::vector<std::vector<TDescriptor> > &features);
   
+  /**
+   * Returns a random number in the range [min..max]
+   * @param min
+   * @param max
+   * @return random T number in [min..max]
+   */
+  template <class T>
+  static T RandomValue(T min, T max){
+      return ((T)rand()/(T)RAND_MAX) * (max - min) + min;
+  }
+
+  /**
+   * Returns a random int in the range [min..max]
+   * @param min
+   * @param max
+   * @return random int in [min..max]
+   */
+  static int RandomInt(int min, int max){
+      int d = max - min + 1;
+      return int(((double)rand()/((double)RAND_MAX + 1.0)) * d) + min;
+  }
+
 protected:
 
   /// Branching factor
@@ -824,15 +844,13 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
   // 5. Now that the initial centers have been chosen, proceed using standard k-means 
   //    clustering.
 
-  DUtils::Random::SeedRandOnce();
-
   clusters.resize(0);
   clusters.reserve(m_k);
   std::vector<double> min_dists(pfeatures.size(), std::numeric_limits<double>::max());
   
   // 1.
   
-  int ifeature = DUtils::Random::RandomInt(0, pfeatures.size()-1);
+  int ifeature = RandomInt(0, pfeatures.size()-1);
   
   // create first cluster
   clusters.push_back(*pfeatures[ifeature]);
@@ -867,7 +885,7 @@ void TemplatedVocabulary<TDescriptor,F>::initiateClustersKMpp(
       double cut_d;
       do
       {
-        cut_d = DUtils::Random::RandomValue<double>(0, dist_sum);
+        cut_d = RandomValue<double>(0, dist_sum);
       } while(cut_d == 0.0);
 
       double d_up_now = 0;

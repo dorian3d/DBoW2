@@ -13,8 +13,6 @@
 #include <stdint.h>
 #include <limits.h>
 
-#include <DUtils/DUtils.h>
-#include <DVision/DVision.h>
 #include "FORB.h"
 
 using namespace std;
@@ -102,7 +100,7 @@ double FORB::distance(const FORB::TDescriptor &a,
   return ret;
   
   // // If uint64_t is not defined in your system, you can try this 
-  // // portable approach
+  // // portable approach (requires DUtils from DLib)
   // const unsigned char *pa, *pb;
   // pa = a.ptr<unsigned char>();
   // pb = b.ptr<unsigned char>();

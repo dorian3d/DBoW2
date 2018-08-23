@@ -36,31 +36,6 @@ set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-find_package(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-
-find_package(DLib QUIET 
-  PATHS ${DEPENDENCY_INSTALL_DIR})
-if(${DLib_FOUND})
-  message("DLib library found, using it from the system")
-  include_directories(${DLib_INCLUDE_DIRS})
-  add_custom_target(Dependencies)
-else(${DLib_FOUND})
-  message("DLib library not found in the system, it will be downloaded on build")
-  option(DOWNLOAD_DLib_dependency "Download DLib dependency" ON)
-  if(${DOWNLOAD_DLib_dependency})
-    ExternalProject_Add(DLib
-      PREFIX ${DEPENDENCY_DIR}
-      GIT_REPOSITORY http://github.com/dorian3d/DLib
-      GIT_TAG master
-      INSTALL_DIR ${DEPENDENCY_INSTALL_DIR}
-      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>)
-    add_custom_target(Dependencies ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS DLib)
-  else()
-    message(SEND_ERROR "Please, activate DOWNLOAD_DLib_dependency option or download manually")
-  endif(${DOWNLOAD_DLib_dependency})
-endif(${DLib_FOUND})
-
 if(BUILD_DBoW2)
   set(LIB_SHARED "SHARED")
   if(WIN32)
@@ -68,13 +43,12 @@ if(BUILD_DBoW2)
   endif(WIN32)
   add_library(${PROJECT_NAME} ${LIB_SHARED} ${SRCS})
   include_directories(include/DBoW2/)
-  add_dependencies(${PROJECT_NAME} Dependencies)
-  target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
+  target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 endif(BUILD_DBoW2)
 
 if(BUILD_Demo)
   add_executable(demo demo/demo.cpp)
-  target_link_libraries(demo ${PROJECT_NAME} ${OpenCV_LIBS} ${DLib_LIBS})
+  target_link_libraries(demo ${PROJECT_NAME} ${OpenCV_LIBS})
   file(COPY demo/images DESTINATION ${CMAKE_BINARY_DIR}/)
 endif(BUILD_Demo)
 

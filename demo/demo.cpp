@@ -12,9 +12,6 @@
 // DBoW2
 #include "DBoW2.h" // defines OrbVocabulary and OrbDatabase
 
-#include <DUtils/DUtils.h>
-#include <DVision/DVision.h>
-
 // OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -22,7 +19,6 @@
 
 
 using namespace DBoW2;
-using namespace DUtils;
 using namespace std;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

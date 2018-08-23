@@ -11,11 +11,11 @@
 #define __D_T_F_BRIEF__
 
 #include <opencv2/core.hpp>
+#include <bitset>
 #include <vector>
 #include <string>
 
 #include "FClass.h"
-#include <DVision/DVision.h>
 
 namespace DBoW2 {
 
@@ -24,7 +24,8 @@ class FBrief: protected FClass
 {
 public:
 
-  typedef DVision::BRIEF::bitset TDescriptor;
+  static const int L = 256; // Descriptor length (in bits)
+  typedef std::bitset<L> TDescriptor;
   typedef const TDescriptor *pDescriptor;
 
   /**
