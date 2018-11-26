@@ -712,6 +712,10 @@ void TemplatedVocabulary<TDescriptor,F>::HKmeansStep(NodeId parent_id,
           
           
           F::meanValue(cluster_descriptors, clusters[c]);
+          if (clusters[c].empty()) {
+            clusters.erase(clusters.begin() + c);
+          }
+
         }
         
       } // if(!first_time)
