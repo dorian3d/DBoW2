@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(DBoW2)
 include(ExternalProject)
 
@@ -42,7 +42,7 @@ if(BUILD_DBoW2)
     set(LIB_SHARED "STATIC")
   endif(WIN32)
   add_library(${PROJECT_NAME} ${LIB_SHARED} ${SRCS})
-  include_directories(include/DBoW2/)
+  target_include_directories(${PROJECT_NAME} PUBLIC include/DBoW2/)
   target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 endif(BUILD_DBoW2)
 
