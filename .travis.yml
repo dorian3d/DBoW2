@@ -1,0 +1,28 @@
+language: cpp
+os:
+    - linux
+dist:
+    - bionic
+compiler:
+    - clang
+    - gcc
+env:
+    - OPENCV_BRANCH=master
+    - OPENCV_BRANCH=3.4
+before_install:
+    - sudo apt-get update
+before_script:
+    - git clone --single-branch --branch ${OPENCV_BRANCH} https://github.com/opencv/opencv.git
+    - pushd opencv
+    - mkdir build
+    - cd build
+    - cmake .. -DBUILD_LIST=core,imgproc,imgcodecs,calib3d,highgui -DBUILD_EXAMPLES=OFF
+    - make -j8
+    - sudo make -j8 install
+    - popd
+script:
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make
+    - echo | ./demo
