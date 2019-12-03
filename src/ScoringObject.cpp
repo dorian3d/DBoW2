@@ -1,3 +1,18 @@
+/**************************************************************************
+ * Copyright (c) 2019 Chimney Xu. All Rights Reserve.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **************************************************************************/
 /**
  * File: ScoringObject.cpp
  * Date: November 2011
@@ -7,309 +22,213 @@
  *
  */
 
-#include <cfloat>
-#include "TemplatedVocabulary.h"
-#include "BowVector.h"
+#include <TemplatedVocabulary.hpp>
+#include <BowVector.h>
 
-using namespace DBoW2;
+#include <numeric>
 
-// If you change the type of WordValue, make sure you change also the
-// epsilon value (this is needed by the KL method)
-const double GeneralScoring::LOG_EPS = log(DBL_EPSILON); // FLT_EPSILON
+namespace TDBoW {
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
+#define __CMP_CB [](\
+    WordValue& _Score,\
+    BowVector::const_iterator& _It1,\
+    BowVector::const_iterator& _It2,\
+    const BowVector& _V1, const BowVector& _V2,\
+    const Calculator& _Cal, const Scaler&)
 
-double L1Scoring::score(const BowVector &v1, const BowVector &v2) const
-{
-  BowVector::const_iterator v1_it, v2_it;
-  const BowVector::const_iterator v1_end = v1.end();
-  const BowVector::const_iterator v2_end = v2.end();
-  
-  v1_it = v1.begin();
-  v2_it = v2.begin();
-  
-  double score = 0;
-  
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
-    const WordValue& vi = v1_it->second;
-    const WordValue& wi = v2_it->second;
-    
-    if(v1_it->first == v2_it->first)
-    {
-      score += fabs(vi - wi) - fabs(vi) - fabs(wi);
-      
-      // move v1 and v2 forward
-      ++v1_it;
-      ++v2_it;
+#define __IVT_CB [](\
+    const BowVector& _Vec,\
+    const InvertedFile& _InvertedFile,\
+    Records::value_type& _Pair)
+
+const WordValue GeneralScoring::LOG_EPS = log(std::numeric_limits<WordValue>::epsilon());
+
+#define __CALL(NAME)\
+NAME (ret, it1, it2, _V1, _V2, m_cCalculator, m_cScaler)
+WordValue GeneralScoring::score(
+        const BowVector& _V1, const BowVector& _V2) const {
+    WordValue ret = 0;
+    auto it1 = _V1.begin();
+    auto it2 = _V2.begin();
+    while(it1 != _V1.end() && it2 != _V2.end()) {
+        if(it1 -> first == it2 -> first) {
+            __CALL(m_cEqCallback);
+        } else if(it1 -> first < it2 -> first) {
+            __CALL(m_cSmallCallback);
+        } else {
+            __CALL(m_cBiggerCallback);
+        }
     }
-    else if(v1_it->first < v2_it->first)
-    {
-      // move v1 forward
-      v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
-    }
-    else
-    {
-      // move v2 forward
-      v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
-    }
-  }
-  
-  // ||v - w||_{L1} = 2 + Sum(|v_i - w_i| - |v_i| - |w_i|) 
-  //		for all i | v_i != 0 and w_i != 0 
-  // (Nister, 2006)
-  // scaled_||v - w||_{L1} = 1 - 0.5 * ||v - w||_{L1}
-  score = -score/2.0;
+    __CALL(m_cAfterAllCallback);
+    return ret;
+}
+#undef __CALL
 
-  return score; // [0..1]
+QueryResults GeneralScoring::score(const BowVector& _Vec,
+        const InvertedFile& _InvertedFile, const unsigned _MaxResults,
+        const unsigned _MinCommon, const EntryId _MaxId) const {
+    std::map<EntryId, Record> scores;
+    for(const auto& word : _Vec) {
+        const auto &wordId = word.first;
+        const auto &qValue = word.second;
+        // IFRows are sorted in ascending entry_id order
+        for(const auto& pair : _InvertedFile[wordId]) {
+            const auto& entryId = pair.entry_id;
+            const auto& dValue  = pair.word_weight;
+            if(_MaxId && entryId >= _MaxId)continue;
+            WordValue value = m_cCalculator(qValue, dValue);
+            if(value == 0)continue;
+            auto iter = scores.lower_bound(entryId);
+            if(iter != scores.end() && !(scores.key_comp()(entryId, iter -> first))) {
+                iter -> second.first += value;
+                iter -> second.second++;
+            } else {
+                scores.insert(iter, std::make_pair(entryId, std::make_pair(value, 1)));
+            }
+        } // for each inverted row
+    } // for each query word
+    QueryResults ret;
+    ret.reserve(scores.size());
+    for(auto& pair : scores) {
+        if(pair.second.second < _MinCommon)continue;
+        m_cInvertedCallback(_Vec, _InvertedFile, pair);
+        ret.emplace_back(Result(pair.first, pair.second.first));
+    }
+
+    // Sort vector
+    if(m_bSmallBetter) {
+        std::sort(ret.begin(), ret.end(), std::less<Result>()); // NOLINT(modernize-use-transparent-functors)
+    } else {
+        std::sort(ret.begin(), ret.end(), std::greater<Result>()); // NOLINT(modernize-use-transparent-functors)
+    }
+    // (ret is sorted now [the best ... the worst])
+
+    // Cut vector
+    if(_MaxResults > 0 && ret.size() > _MaxResults) {
+        ret.resize(_MaxResults);
+    }
+    ret.shrink_to_fit();
+    // Scale
+    for(auto& r : ret) {
+        m_cScaler(r.Score);
+    }
+    return ret;
 }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
+/* ********************************************************************************
+ *                                L1 Scoring                                      *
+ ******************************************************************************** */
 
-double L2Scoring::score(const BowVector &v1, const BowVector &v2) const
-{
-  BowVector::const_iterator v1_it, v2_it;
-  const BowVector::const_iterator v1_end = v1.end();
-  const BowVector::const_iterator v2_end = v2.end();
-  
-  v1_it = v1.begin();
-  v2_it = v2.begin();
-  
-  double score = 0;
-  
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
-    const WordValue& vi = v1_it->second;
-    const WordValue& wi = v2_it->second;
-    
-    if(v1_it->first == v2_it->first)
-    {
-      score += vi * wi;
-      
-      // move v1 and v2 forward
-      ++v1_it;
-      ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
-      // move v1 forward
-      v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
-    }
-    else
-    {
-      // move v2 forward
-      v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
-    }
-  }
-  
-  // ||v - w||_{L2} = sqrt( 2 - 2 * Sum(v_i * w_i) )
-	//		for all i | v_i != 0 and w_i != 0 )
-	// (Nister, 2006)
-	if(score >= 1) // rounding errors
-	  score = 1.0;
-	else
-    score = 1.0 - sqrt(1.0 - score); // [0..1]
+/**
+ * ||v - w||_{L1} = 2 + Sum(|v_i - w_i| - |v_i| - |w_i|)
+ * for all i | v_i != 0 and w_i != 0
+ * (Nister, 2006)
+ * scaled_||v - w||_{L1} = 1 - 0.5 * ||v - w||_{L1}
+ */
+L1Scoring::L1Scoring() : GeneralScoring(true, // less is better
+// Calculator
+[](const WordValue& _V, const WordValue& _W) -> WordValue {
+    return fabs(_V - _W) - fabs(_V) - fabs(_W);
+},
+// Scaler
+[](WordValue& _Score) -> WordValue& {
+    return _Score /= -2.;   // [0..1], greater is better
+}) {}
 
-  return score;
-}
+/* ********************************************************************************
+ *                                L2 Scoring                                      *
+ ******************************************************************************** */
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
+/**
+ * ||v - w||_{L2} = sqrt( 2 - 2 * Sum(v_i * w_i) )
+ * for all i | v_i != 0 and w_i != 0 )
+ * (Nister, 2006)
+ */
+L2Scoring::L2Scoring() : GeneralScoring(false, // greater is better
+// Calculator
+[](const WordValue& _V, const WordValue& _W) -> WordValue {
+    return _V * _W;
+},
+// Scaler
+[](WordValue& _Score) -> WordValue& {
+    return _Score = _Score >= 1 ? 1.0 : 1.0 - sqrt(1.0 - _Score); // [0..1]
+}) {}
 
-double ChiSquareScoring::score(const BowVector &v1, const BowVector &v2) 
-  const
-{
-  BowVector::const_iterator v1_it, v2_it;
-  const BowVector::const_iterator v1_end = v1.end();
-  const BowVector::const_iterator v2_end = v2.end();
-  
-  v1_it = v1.begin();
-  v2_it = v2.begin();
-  
-  double score = 0;
-  
-  // all the items are taken into account
-  
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
-    const WordValue& vi = v1_it->second;
-    const WordValue& wi = v2_it->second;
-    
-    if(v1_it->first == v2_it->first)
-    {
-      // (v-w)^2/(v+w) - v - w = -4 vw/(v+w)
-      // we move the -4 out
-      if(vi + wi != 0.0) score += vi * wi / (vi + wi);
-      
-      // move v1 and v2 forward
-      ++v1_it;
-      ++v2_it;
+/* ********************************************************************************
+ *                             Chi Square Scoring                                 *
+ ******************************************************************************** */
+
+ChiSquareScoring::ChiSquareScoring() : GeneralScoring(false, // greater is better
+// Calculator
+[](const WordValue& _V, const WordValue& _W) -> WordValue {
+    // (v-w)^2/(v+w) - v - w = -4 vw/(v+w)
+    // we move the -4 out
+    const auto tmp = _V + _W;
+    return tmp != 0 ? _V * _W / tmp : 0;
+},
+// Scaler
+[](WordValue& _Score) -> WordValue& {
+    // this takes the -4 into account
+    return _Score *= 2.; // [0..1]
+}) {}
+
+/* ********************************************************************************
+ *                           KL Divergence Scoring                                *
+ ******************************************************************************** */
+
+KLScoring::KLScoring() : GeneralScoring(true, // less is better
+// Calculator
+[](const WordValue& _V, const WordValue& _W) -> WordValue {
+    return _V * log(_V / _W);
+},
+default_scaler,
+// After all callback
+__CMP_CB {
+    // sum rest of items of v
+    for(; _It1 != _V1.end(); _It1++) {
+        if(_It1 -> second == 0)continue;
+        _Score += _It1 -> second * (log(_It1 -> second) - LOG_EPS);
     }
-    else if(v1_it->first < v2_it->first)
-    {
-      // move v1 forward
-      v1_it = v1.lower_bound(v2_it->first);
+},
+// Smaller callback
+__CMP_CB {
+    const auto& vi = _It1++ -> second;
+    _Score += vi * (log(vi) - LOG_EPS);
+},
+// Inverted Callback
+__IVT_CB {
+    const auto& entryId = _Pair.first;
+    auto& value = _Pair.second.first;
+    for(const auto& word : _Vec) {
+        const auto& vi = word.second;
+        const auto& row = _InvertedFile[word.first];
+        if(vi != 0 && std::find(row.begin(), row.end(), entryId) == row.end()) {
+            value += vi * (log(vi) - GeneralScoring::LOG_EPS);
+        }
     }
-    else
-    {
-      // move v2 forward
-      v2_it = v2.lower_bound(v1_it->first);
-    }
-  }
-    
-  // this takes the -4 into account
-  score = 2. * score; // [0..1]
+}) {}
 
-  return score;
-}
+/* ********************************************************************************
+ *                           Bhattacharyya Scoring                                *
+ ******************************************************************************** */
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
+BhattacharyyaScoring::BhattacharyyaScoring() : GeneralScoring(true, // less is better
+// Calculator
+[](const WordValue& _V, const WordValue& _W) -> WordValue {
+    return sqrt(_V * _W);
+}) {}
 
-double KLScoring::score(const BowVector &v1, const BowVector &v2) const
-{ 
-  BowVector::const_iterator v1_it, v2_it;
-  const BowVector::const_iterator v1_end = v1.end();
-  const BowVector::const_iterator v2_end = v2.end();
-  
-  v1_it = v1.begin();
-  v2_it = v2.begin();
-  
-  double score = 0;
-  
-  // all the items or v are taken into account
-  
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
-    const WordValue& vi = v1_it->second;
-    const WordValue& wi = v2_it->second;
-    
-    if(v1_it->first == v2_it->first)
-    {
-      if(vi != 0 && wi != 0) score += vi * log(vi/wi);
-      
-      // move v1 and v2 forward
-      ++v1_it;
-      ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
-      // move v1 forward
-      score += vi * (log(vi) - LOG_EPS);
-      ++v1_it;
-    }
-    else
-    {
-      // move v2_it forward, do not add any score
-      v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
-    }
-  }
-  
-  // sum rest of items of v
-  for(; v1_it != v1_end; ++v1_it) 
-    if(v1_it->second != 0)
-      score += v1_it->second * (log(v1_it->second) - LOG_EPS);
-  
-  return score; // cannot be scaled
-}
+/* ********************************************************************************
+ *                            Dot Product Scoring                                 *
+ ******************************************************************************** */
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
+DotProductScoring::DotProductScoring() : GeneralScoring(true, // less is better
+// Calculator
+[](const WordValue& _V, const WordValue& _W) -> WordValue {
+    return _V * _W;
+}) {}
 
-double BhattacharyyaScoring::score(const BowVector &v1, 
-  const BowVector &v2) const
-{
-  BowVector::const_iterator v1_it, v2_it;
-  const BowVector::const_iterator v1_end = v1.end();
-  const BowVector::const_iterator v2_end = v2.end();
-  
-  v1_it = v1.begin();
-  v2_it = v2.begin();
-  
-  double score = 0;
-  
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
-    const WordValue& vi = v1_it->second;
-    const WordValue& wi = v2_it->second;
-    
-    if(v1_it->first == v2_it->first)
-    {
-      score += sqrt(vi * wi);
-      
-      // move v1 and v2 forward
-      ++v1_it;
-      ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
-      // move v1 forward
-      v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
-    }
-    else
-    {
-      // move v2 forward
-      v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
-    }
-  }
+#undef __CMP_CB
+#undef __IVT_CB
 
-  return score; // already scaled
-}
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
-double DotProductScoring::score(const BowVector &v1, 
-  const BowVector &v2) const
-{
-  BowVector::const_iterator v1_it, v2_it;
-  const BowVector::const_iterator v1_end = v1.end();
-  const BowVector::const_iterator v2_end = v2.end();
-  
-  v1_it = v1.begin();
-  v2_it = v2.begin();
-  
-  double score = 0;
-  
-  while(v1_it != v1_end && v2_it != v2_end)
-  {
-    const WordValue& vi = v1_it->second;
-    const WordValue& wi = v2_it->second;
-    
-    if(v1_it->first == v2_it->first)
-    {
-      score += vi * wi;
-      
-      // move v1 and v2 forward
-      ++v1_it;
-      ++v2_it;
-    }
-    else if(v1_it->first < v2_it->first)
-    {
-      // move v1 forward
-      v1_it = v1.lower_bound(v2_it->first);
-      // v1_it = (first element >= v2_it.id)
-    }
-    else
-    {
-      // move v2 forward
-      v2_it = v2.lower_bound(v1_it->first);
-      // v2_it = (first element >= v1_it.id)
-    }
-  }
-
-  return score; // cannot scale
-}
-
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
+} // namespace TDBoW

@@ -1,22 +1,40 @@
-DBoW2
+TDBoW
 =====
 
-DBoW2 is an improved version of the DBow library, an open source C++ library for indexing and converting images into a bag-of-word representation. It implements a hierarchical tree for approximating nearest neighbours in the image feature space and creating a visual vocabulary. DBoW2 also implements an image database with inverted and direct files to index images and enabling quick queries and feature comparisons. The main differences with the previous DBow library are:
+TDBoW is an forked version of the DBow2 library, an open source C++ library for indexing and converting
+pointcloud (or image) into a bag-of-word representation.
+It implements a hierarchical tree for approximating nearest neighbours in the feature space and creating
+a feature vocabulary. TDBoW also implements an image database with inverted and direct files to index
+pointclouds (or images) and enabling quick queries and feature comparisons.
+The main differences with the previous DBow2 library are:
 
-  * DBoW2 classes are templated, so it can work with any type of descriptor.
-  * DBoW2 is shipped with classes to directly work with ORB or BRIEF descriptors.
-  * DBoW2 adds a direct file to the image database to do fast feature comparison. This is used by DLoopDetector.
-  * DBoW2 does not use a binary format any longer. On the other hand, it uses the OpenCV storage system to save vocabularies and databases. This means that these files can be stored as plain text in YAML format, making compatibility easier, or compressed in gunzip format (.gz) to reduce disk usage.
-  * Some pieces of code have been rewritten to optimize speed. The interface of DBoW2 has been simplified.
-  * For performance reasons, DBoW2 does not support stop words.
+  * (Still work-in-progress) TDBoW support 3D descriptor calculated
+  from pointcloud.
+  * TDBoW classes don't need to inheritance the templated base class,
+  since TDBoW using Eigen for common represent.
+  * TDBoW won't compile with OpenCV any more, although it can still
+  easily used based on `CVBridge.h`.
+  * TDBoW add binary I/O support, and compress the vocabulary using
+  QuickLZ algorithm in default when binary output. On the other hand,
+  it can still use YAML format for friendly reading. Specially, the
+  DBoW2 vocabulary is supported for reading.
+  * (Still work-in-progress) TDBoW using k-means Ⅱ replaced k-means++.
+  * Some pieces of code have been rewritten to optimize speed.
+  The interface of TDBoW has been simplified. TDBoW do not support
+  compile version less than c++11.
+  * Stop words won't lose IDF information any more.
 
-DBoW2 requires OpenCV and the `Boost::dynamic_bitset` class in order to use the BRIEF version.
+TDBoW requires Eigen, yaml-cpp and Boost-filesystem.
 
-DBoW2, along with DLoopDetector, has been tested on several real datasets, yielding an execution time of 3 ms to convert the BRIEF features of an image into a bag-of-words vector and 5 ms to look for image matches in a database with more than 19000 images.
+(Still work-in-progress) TDBoW, along with DLoopDetector, has been tested on several real datasets,
+yielding an execution time of 3 ms to convert the BRIEF features of an image into a bag-of-words vector
+and 5 ms to look for image matches in a database with more than 19000 images.
 
 ## Citing
 
 If you use this software in an academic work, please cite:
+
+    @ARTICLE{Still work-in-progress}
 
     @ARTICLE{GalvezTRO12,
       author={G\'alvez-L\'opez, Dorian and Tard\'os, J. D.},
@@ -36,40 +54,48 @@ If you use this software in an academic work, please cite:
 
 ### Weighting and Scoring
 
-DBoW2 implements the same weighting and scoring mechanisms as DBow. Check them here. The only difference is that DBoW2 scales all the scores to [0..1], so that the scaling flag is not used any longer.
+TDBoW implements the same weighting and scoring mechanisms as DBow2.
 
 ### Save & Load
 
-All vocabularies and databases can be saved to and load from disk with the save and load member functions. When a database is saved, the vocabulary it is associated with is also embedded in the file, so that vocabulary and database files are completely independent.
+Different from DBoW2, only vocabularies can be saved to and load from disk in TDBoW. Since TDBoW support
+multiple format I/O, it support automatically decide the file format from the extension.
 
-You can also add the vocabulary or database data to any file opened with a `cv::FileStorage` structure.
+When using yaml format, you can also load the vocabulary data from file opened with a `cv::FileStorage`
+structure.
 
-You can save the vocabulary or the database with any file extension. If you use .gz, the file is automatically compressed (OpenCV behaviour).
+You can save the vocabulary with any file extension. If you using binary(default), the data will default
+to be compressed by QuickLZ algorithm.
 
 ## Implementation notes
 
 ### Template parameters
 
-DBoW2 has two main classes: `TemplatedVocabulary` and `TemplatedDatabase`. These implement the visual vocabulary to convert images into bag-of-words vectors and the database to index images. These classes are templated:
+TDBoW has two main classes: `TemplatedVocabulary` and `TemplatedDatabase`. These implement the features
+vocabulary to convert pointclouds (or images) into bag-of-words vectors and the database to index images.
+These classes are templated:
 
-    template<class TDescriptor, class F>
-    class TemplatedVocabulary
-    {
+    template <typename TScalar, size_t L>
+    class TemplatedVocabulary {
       ...
     };
 
-    template<class TDescriptor, class F>
-    class TemplatedDatabase
-    {
+    template <class TemplatedVocabulary>
+    class TemplatedDatabase {
       ...
     };
 
-Two classes must be provided: `TDescriptor` is the data type of a single descriptor vector, and `F`, a class with the functions to manipulate descriptors, derived from `FClass`.
+Two classes must be provided: `TScalar` is the data scalar type of the descriptor, and `L` is the
+length of descriptor in `TScalar`.
 
-For example, to work with ORB descriptors, `TDescriptor` is defined as `cv::Mat` (of type `CV_8UC1`), which is a single row that contains 32 8-bit values. When features are extracted from an image, a `std::vector<TDescriptor>` must be obtained. In the case of BRIEF, `TDescriptor` is defined as `boost::dynamic_bitset<>`.
+For example, to work with cv::ORB descriptors, which contained by 256 bits (32 bytes). The descriptor
+is designed as `Eigen::Matrix<uint8_t, 1, 32, Eigen::RowMajor>`, so we set `TScalar` to `uint8_t`, and
+set `L` as `32`.
 
-The `F` parameter is the name of a class that implements the functions defined in `FClass`. These functions get `TDescriptor` data and compute some result. Classes to deal with ORB and BRIEF descriptors are already included in DBoW2. (`FORB`, `FBrief`).
+Default `meanValue`, `distance`, `toString` and `fromString` methods are already implemented, but can
+still easily override by lambda methods.
 
-### Predefined Vocabularies and Databases
+### Use TDBoW in CV mode
 
-To make it easier to use, DBoW2 defines two kinds of vocabularies and databases: `OrbVocabulary`, `OrbDatabase`, `BriefVocabulary`, `BriefDatabase`. Please, check the demo application to see how they are created and used.
+OpenCV is a very strong library, which contains many kinds of image descriptors implement. So we add
+`CVBridge.h` for OpenCV users. More details can be founded in [cv_demo](demo/cv/demo.cpp).

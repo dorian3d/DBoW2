@@ -1,3 +1,18 @@
+/**************************************************************************
+ * Copyright (c) 2019 Chimney Xu. All Rights Reserve.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **************************************************************************/
 /**
  * File: BowVector.cpp
  * Date: March 2011
@@ -7,124 +22,140 @@
  *
  */
 
-#include <iostream>
 #include <fstream>
-#include <vector>
-#include <algorithm>
 #include <cmath>
 
-#include "BowVector.h"
+#include <BowVector.h>
 
-namespace DBoW2 {
-
-// --------------------------------------------------------------------------
-
-BowVector::BowVector(void)
-{
-}
+namespace TDBoW {
 
 // --------------------------------------------------------------------------
 
-BowVector::~BowVector(void)
-{
-}
-
-// --------------------------------------------------------------------------
-
-void BowVector::addWeight(WordId id, WordValue v)
-{
-  BowVector::iterator vit = this->lower_bound(id);
-  
-  if(vit != this->end() && !(this->key_comp()(id, vit->first)))
-  {
-    vit->second += v;
-  }
-  else
-  {
-    this->insert(vit, BowVector::value_type(id, v));
-  }
-}
-
-// --------------------------------------------------------------------------
-
-void BowVector::addIfNotExist(WordId id, WordValue v)
-{
-  BowVector::iterator vit = this->lower_bound(id);
-  
-  if(vit == this->end() || (this->key_comp()(id, vit->first)))
-  {
-    this->insert(vit, BowVector::value_type(id, v));
-  }
-}
-
-// --------------------------------------------------------------------------
-
-void BowVector::normalize(LNorm norm_type)
-{
-  double norm = 0.0; 
-  BowVector::iterator it;
-
-  if(norm_type == DBoW2::L1)
-  {
-    for(it = begin(); it != end(); ++it)
-      norm += fabs(it->second);
-  }
-  else
-  {
-    for(it = begin(); it != end(); ++it)
-      norm += it->second * it->second;
-		norm = sqrt(norm);  
-  }
-
-  if(norm > 0.0)
-  {
-    for(it = begin(); it != end(); ++it)
-      it->second /= norm;
-  }
-}
-
-// --------------------------------------------------------------------------
-
-std::ostream& operator<< (std::ostream &out, const BowVector &v)
-{
-  BowVector::const_iterator vit;
-  std::vector<unsigned int>::const_iterator iit;
-  unsigned int i = 0; 
-  const unsigned int N = v.size();
-  for(vit = v.begin(); vit != v.end(); ++vit, ++i)
-  {
-    out << "<" << vit->first << ", " << vit->second << ">";
-    
-    if(i < N-1) out << ", ";
-  }
-  return out;
-}
-
-// --------------------------------------------------------------------------
-
-void BowVector::saveM(const std::string &filename, size_t W) const
-{
-  std::fstream f(filename.c_str(), std::ios::out);
-  
-  WordId last = 0;
-  BowVector::const_iterator bit;
-  for(bit = this->begin(); bit != this->end(); ++bit)
-  {
-    for(; last < bit->first; ++last)
-    {
-      f << "0 ";
+BowVector::BowVector(const BowVector& _Obj) : m_bLocked(false) {
+    if(_Obj.m_bLocked) {
+        while(true) {
+            bool excepted = false;
+            if(_Obj.m_bLocked.compare_exchange_strong(excepted, true)) {
+                break;
+            }
+        }
     }
-    f << bit->second << " ";
-    
-    last = bit->first + 1;
-  }
-  for(; last < (WordId)W; ++last)
-    f << "0 ";
-  
-  f.close();
+    for(const auto& pair : _Obj) {
+        insert(end(), pair);
+    }
+    _Obj.m_bLocked = false;
 }
 
 // --------------------------------------------------------------------------
 
-} // namespace DBoW2
+void BowVector::addWeight(const WordId _ID, const WordValue _Val) {
+    SpinLock locker(m_bLocked);
+    auto iter = lower_bound(_ID);
+    if(iter != end() && !(key_comp()(_ID, iter -> first))) {
+        iter -> second += _Val;
+    } else {
+        insert(iter, BowVector::value_type(_ID, _Val));
+    }
+}
 
+// --------------------------------------------------------------------------
+
+void BowVector::addIfNotExist(const WordId _ID, const WordValue _Val) {
+    SpinLock locker(m_bLocked);
+    auto vit = this->lower_bound(_ID);
+    if(vit == this->end() || (this->key_comp()(_ID, vit->first))) {
+        this->insert(vit, BowVector::value_type(_ID, _Val));
+    }
+}
+
+// --------------------------------------------------------------------------
+
+void BowVector::normalize(const LNorm _NormType) {
+    double norm = 0.0;
+    SpinLock locker(m_bLocked);
+    switch(_NormType) {
+    case L1:
+        for(const auto& pair : *this) {
+            norm += fabs(pair.second);
+        }
+        break;
+
+    case L2:
+        for(const auto& pair : *this) {
+            norm += pow(pair.second, 2);
+        }
+        norm = sqrt(norm);
+        break;
+    }
+
+    if(norm > 0.0) {
+        for(auto& pair : *this) {
+            pair.second /= norm;
+        }
+    }
+}
+
+// -------------------------------------------------------------------------
+
+std::ostream& operator<< (std::ostream& _Out, const BowVector& _Vec) {
+    SpinLock locker(_Vec.m_bLocked);
+    if(_Vec.empty())return _Out << "<empty>";
+    auto iter = _Vec.begin();
+    _Out << '<' << iter -> first << ", " << iter -> second << '>';
+    while(iter != _Vec.end()) {
+        _Out << ", <" <<  iter -> first << ", " << iter -> second << '>';
+        iter++;
+    }
+    return _Out;
+}
+
+// --------------------------------------------------------------------------
+
+void BowVector::saveBinary(const std::string& _Filename) const {
+    SpinLock locker(m_bLocked);
+    std::fstream f(_Filename.c_str(), std::ios::out|std::ios::binary);
+    auto len = size();
+    f.write((char*)&len, sizeof(len));
+    for(const auto& pair : *this) {
+        f.write((char*)&pair, sizeof(pair));
+    }
+    f.close();
+}
+
+// --------------------------------------------------------------------------
+
+void BowVector::loadBinary(const std::string& _Filename) {
+    SpinLock locker(m_bLocked);
+    std::fstream f(_Filename.c_str(), std::ios::in|std::ios::binary);
+    clear();
+    auto len = size();
+    f.read((char*)&len, sizeof(len));
+    BowVector::value_type pair;
+    for(size_t i = 0; i <len; i++) {
+        f.read((char*)&pair, sizeof(pair));
+        insert(end(), pair);
+    }
+    f.close();
+}
+
+// --------------------------------------------------------------------------
+
+void BowVector::saveM(const std::string& _Filename, size_t _Width) const {
+    SpinLock locker(m_bLocked);
+    std::fstream f(_Filename.c_str(), std::ios::out);
+    WordId last = 0;
+    BowVector::const_iterator bit;
+    for(bit = this->begin(); bit != this->end(); ++bit) {
+        for(; last < bit->first; ++last) {
+            f << "0 ";
+        }
+        f << bit->second << " ";
+        last++;
+    }
+    for(; last < (WordId)_Width; ++last)f << "0 ";
+    f.close();
+}
+
+// --------------------------------------------------------------------------
+
+} // namespace TDBoW
