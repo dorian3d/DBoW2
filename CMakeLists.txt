@@ -1,12 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
-project(TDBoW)
-include(ExternalProject)
+project(tdbow)
 
 ####################
 ## Option setting ##
 ####################
 
-option(BUILD_TDBoW      "Build TDBoW"   ON)
 option(BUILD_PC_Demo    "Build PC demo" OFF)
 option(BUILD_CV_Demo    "Build CV demo" ON)
 
@@ -35,18 +33,36 @@ endif()
 ## comment below when develop new utility or framework
 SET(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
 
+add_definitions(-DPKG_DIR="${CMAKE_CURRENT_LIST_DIR}")
+
 ###################
 ## find packages ##
 ###################
+find_package(catkin REQUIRED)
 
 ## Eigen and boost are required
-find_package(Eigen3 REQUIRED)
+
+# Manually resolve removed dependend packages
+find_package(Eigen3 QUIET)
+if (NOT EIGEN3_FOUND)
+  # Fallback to cmake_modules
+  find_package(cmake_modules REQUIRED)
+  find_package(Eigen REQUIRED)
+  set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
+  set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
+  # Possibly map additional variables to the EIGEN3_ prefix.
+else ()
+  set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+endif ()
+
 find_package(Boost REQUIRED COMPONENTS filesystem)
 if(NOT (Boost_VERSION VERSION_LESS "106000"))
   add_definitions(-DFOUND_BOOST_1_60)
 endif()
 set(EXTRA_INCS ${Boost_INCLUDE_DIRS} ${EXTRA_INCS})
 set(EXTRA_LIBS ${Boost_LIBRARIES}    ${EXTRA_LIBS})
+
+## Setting the extra libraries
 
 ## QuickLZ lib is installed
 set(QUICKLZ_INC libs/quicklz)
@@ -59,7 +75,13 @@ set(EXTRA_SRCS ${QUICKLZ_SRC} ${EXTRA_SRCS})
 ## Yaml-cpp is required
 set(EXTRA_LIBS yaml-cpp ${EXTRA_LIBS})
 
-## Setting the extra libraries
+###################################
+## catkin specific configuration ##
+###################################
+catkin_package(
+    INCLUDE_DIRS include libs/quicklz
+    LIBRARIES ${PROJECT_NAME}
+)
 
 ## Setting TDBoW context
 set(TDBoW_INC include/TDBoW)
@@ -73,39 +95,34 @@ file(GLOB_RECURSE TDBoW_SRCS
         src/*.c
         src/*.cc
         src/*.cpp)
-set(HDRS ${TDBoW_HDRS} ${EXTRA_HDRS})
-set(SRCS ${TDBoW_SRCS} ${EXTRA_SRCS})
 
 set(DEPENDENCY_DIR ${CMAKE_CURRENT_BINARY_DIR}/dependencies)
 set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
 
-if(BUILD_TDBoW)
-  set(LIB_SHARED "SHARED")
-  if(WIN32)
-    set(LIB_SHARED "STATIC")
-  endif(WIN32)
-  add_library(${PROJECT_NAME} ${LIB_SHARED} ${SRCS})
-  include_directories(${TDBoW_INC} ${EXTRA_INCS})
-  target_link_libraries(${PROJECT_NAME} ${TDBoW_LIB} ${EXTRA_LIBS})
-endif()
+set(LIB_SHARED "SHARED")
+if(WIN32)
+  set(LIB_SHARED "STATIC")
+endif(WIN32)
+add_library(${PROJECT_NAME} ${LIB_SHARED} ${TDBoW_SRCS} ${EXTRA_SRCS})
+include_directories(${TDBoW_INC} ${EXTRA_INCS})
+target_link_libraries(${PROJECT_NAME} ${TDBoW_LIB} ${EXTRA_LIBS})
 
 if(BUILD_CV_Demo)
   find_package(OpenCV REQUIRED)
   add_executable(cv_demo demo/cv/demo.cpp)
   target_link_libraries(cv_demo ${PROJECT_NAME} ${OpenCV_LIBS})
   message(STATUS "`cv_demo` should be generated in ${PROJECT_BINARY_DIR}")
-  file(COPY demo/cv/images DESTINATION ${PROJECT_BINARY_DIR}/)
 endif()
 
-configure_file(src/TDBoW.cmake.in
-  "${PROJECT_BINARY_DIR}/TDBoWConfig.cmake" @ONLY)
+#############
+## Install ##
+#############
+# Install all targets, headers by default and scripts and other files if specified (folders or files)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-if(BUILD_TDBoW)
-  install(DIRECTORY ${TDBoW_INC} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-endif()
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/TDBoWConfig.cmake"
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
-install(FILES "${PROJECT_BINARY_DIR}/TDBoWConfig.cmake"
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/TDBoW/)
-install(DIRECTORY ${DEPENDENCY_INSTALL_DIR}/ DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+install(TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+
+install(FILES ${TDBoW_HDRS} ${QUICKLZ_HDR}
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})

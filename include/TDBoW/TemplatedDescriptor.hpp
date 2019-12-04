@@ -384,7 +384,6 @@ TemplatedDescriptorUtil<TScalar, L>::binaryDistance(
         ret += (uint64_t)(v * ((uint64_t)~(uint64_t)0/255)) >>
                 (sizeof(uint64_t) - 1) * CHAR_BIT;
     }
-
     return ret;
 }
 

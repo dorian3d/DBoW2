@@ -80,6 +80,9 @@ protected:
     typedef typename DescriptorUtil::DistanceCallback    DistanceCallback;
 
 public:
+    typedef std::function<void(const size_t&, const std::vector<DescriptorConstPtr>&,
+            std::vector<Descriptor>&, DistanceCallback, MeanCallback)> InitMethods;
+
     TemplatedKMeans() = delete;
     TemplatedKMeans(const size_t& _K): m_ulK(_K) {}
     ~TemplatedKMeans() = default;
@@ -90,16 +93,31 @@ public:
      * @param  _Descriptors     All descriptors to be grouped.
      * @param  _Centers  (out)  Centers value of each result cluster.
      * @param  _Clusters (out)  Descriptors of each cluster.
+     * @param  _Init            Initial seed selected methods, default
+     *                          by K-Means++.
      * @param  _DistF           Distance function.
      * @param  _MeanF           Mean value function.
      */
     void process(const std::vector<DescriptorConstPtr>& _Descriptors,
                  std::vector<Descriptor>& _Centers,
                  std::vector<std::vector<DescriptorConstPtr>>& _Clusters,
+                 InitMethods _Init = initiateClustersKM2nd,
                  DistanceCallback _DistF = &DescriptorUtil::distance,
                  MeanCallback _MeanF = &DescriptorUtil::meanValue) noexcept(false);
 
 protected:
+
+    /**
+     * @breif  Found k clusters' center from the given descriptor sets
+     *         by running the initial step of k-means
+     * @author smallchimney
+     * @param  _Descriptors   Input descriptors.
+     * @param  _Centers (out) resulting clusters.
+     * @param  _DistF         Distance function.
+     */
+    static void initiateClustersKM(const size_t& _K,
+            const std::vector<DescriptorConstPtr>& _Descriptors,
+            std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M);
 
     /**
      * @breif  Found k clusters' center from the given descriptor sets
@@ -109,8 +127,21 @@ protected:
      * @param  _Centers (out) resulting clusters.
      * @param  _DistF         Distance function.
      */
-    void initiateClustersKMpp(const std::vector<DescriptorConstPtr>& _Descriptors,
-            std::vector<Descriptor>& _Centers, DistanceCallback _F) const noexcept(false);
+    static void initiateClustersKMpp(const size_t& _K,
+            const std::vector<DescriptorConstPtr>& _Descriptors,
+            std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M);
+
+    /**
+     * @breif  Found k clusters' center from the given descriptor sets
+     *         by running the initial step of k-meansⅡ
+     * @author smallchimney
+     * @param  _Descriptors   Input descriptors.
+     * @param  _Centers (out) resulting clusters.
+     * @param  _DistF         Distance function.
+     */
+    static void initiateClustersKM2nd(const size_t& _K,
+            const std::vector<DescriptorConstPtr>& _Descriptors,
+            std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M);
 
 
 private:
@@ -122,7 +153,7 @@ void TemplatedKMeans<DescriptorUtil>::process(
         const std::vector<DescriptorConstPtr>& _Descriptors,
         std::vector<Descriptor>& _Centers,
         std::vector<std::vector<DescriptorConstPtr>>& _Clusters,
-        DistanceCallback _DistF, MeanCallback _MeanF) noexcept(false) {
+        InitMethods _Init, DistanceCallback _DistF, MeanCallback _MeanF) noexcept(false) {
     _Centers.clear();_Centers.shrink_to_fit();
     _Centers.reserve(m_ulK);
     _Clusters.clear();_Clusters.shrink_to_fit();
@@ -130,7 +161,7 @@ void TemplatedKMeans<DescriptorUtil>::process(
     // No need for run k-means
     if(_Descriptors.size() <= m_ulK) {
         // Trivial case: one cluster per feature
-        _Clusters.resize(_Descriptors.size());
+        _Clusters.assign(_Descriptors.size(), std::vector<DescriptorConstPtr>());
         for(size_t i = 0; i < _Descriptors.size(); i++) {
             _Clusters[i].emplace_back(_Descriptors[i]);
             _Centers.emplace_back(*_Descriptors[i]);
@@ -145,7 +176,17 @@ void TemplatedKMeans<DescriptorUtil>::process(
         // 1. Calculate clusters
         if(firstTime) {
             // random sample
-            initiateClustersKMpp(_Descriptors, _Centers, _DistF);
+            _Init(m_ulK, _Descriptors, _Centers, _DistF, _MeanF);
+            if(_Centers.size() < m_ulK) {
+                _Clusters.assign(_Centers.size(), std::vector<DescriptorConstPtr>());
+                for(size_t i = 0; i < _Centers.size(); i++) {
+                    _Clusters[i].emplace_back(std::make_shared<Descriptor>(_Centers[i]));
+                }
+                // Note that in this case, there are repeated descriptors, so the final
+                // clusters' count is not equals with descriptors.
+                return;
+            }
+
             firstTime = false;
         } else {
             // calculate cluster centres
@@ -193,9 +234,22 @@ void TemplatedKMeans<DescriptorUtil>::process(
 }
 
 template <class DescriptorUtil>
-void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(
+void TemplatedKMeans<DescriptorUtil>::initiateClustersKM(const size_t& _K,
         const std::vector<DescriptorConstPtr>& _Descriptors,
-        std::vector<Descriptor>& _Centers, DistanceCallback _F) const noexcept(false) {
+        std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M) {
+    // Random K seeds
+    _Centers.clear();
+    _Centers.reserve(_K);
+    for(size_t i = 0; i < _K; i++) {
+        auto featureIdx = randomInt<size_t>(0, _Descriptors.size() - 1);
+        _Centers.emplace_back(*_Descriptors[featureIdx]);
+    }
+}
+
+template <class DescriptorUtil>
+void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(const size_t& _K,
+        const std::vector<DescriptorConstPtr>& _Descriptors,
+        std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M) {
     // Implements k-means++ seeding algorithm
     // Algorithm:
     // 1. Choose one center uniformly at random from among the data points.
@@ -207,7 +261,7 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(
     // 5. Now that the initial centers have been chosen, proceed using standard k-means
     //    clustering.
     _Centers.clear();
-    _Centers.reserve(m_ulK);
+    _Centers.reserve(_K);
 
     // 1.
     // create first cluster
@@ -221,7 +275,7 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(
         minDist.emplace_back(_F(*descriptor, _Centers.back()));
     }
 
-    while(_Centers.size() < m_ulK) {
+    while(_Centers.size() < _K) {
         // 2.
         const auto& center = _Centers.back();
         for(size_t i = 0; i < _Descriptors.size(); i++) {
@@ -233,7 +287,11 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(
 
         // 3.
         distance_type sum = std::accumulate(minDist.begin(), minDist.end(), 0.);
-        if(sum <= 0) {
+        if(sum == 0) {
+            // Trivial case: one cluster per feature
+            return;
+        }
+        if(sum < 0) {
             throw std::runtime_error(LINE_LOG("get negative sum, please check the `distance()`"));
         }
 
@@ -244,6 +302,22 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(
         }
         _Centers.emplace_back(*_Descriptors[idx - 1]);
     }
+}
+
+template <class DescriptorUtil>
+void TemplatedKMeans<DescriptorUtil>::initiateClustersKM2nd(const size_t& _K,
+        const std::vector<DescriptorConstPtr>& _Descriptors,
+        std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M) {
+    // Implements k-meansⅡ seeding algorithm
+    const auto LIMIT = static_cast<size_t>(log(_Descriptors.size()) / log(2)) * _K;
+    std::vector<DescriptorConstPtr> seeds;
+    seeds.reserve(LIMIT);
+    for(size_t i = 0; i < LIMIT; i++) {
+        auto featureIdx = randomInt<size_t>(0, _Descriptors.size() - 1);
+        seeds.emplace_back(std::make_shared<Descriptor>(*_Descriptors[featureIdx]));
+    }
+    std::vector<std::vector<DescriptorConstPtr>> ignored;
+    TemplatedKMeans<DescriptorUtil>(_K).process(seeds, _Centers, ignored, initiateClustersKMpp, _F, _M);
 }
 
 /* ********************************************************************************

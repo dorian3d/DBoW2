@@ -14,11 +14,14 @@ The main differences with the previous DBow2 library are:
   since TDBoW using Eigen for common represent.
   * TDBoW won't compile with OpenCV any more, although it can still
   easily used based on `CVBridge.h`.
+  * TDBoW now support transform descriptors in multiple threads, but
+  this won't perform better when in few descriptors. Multiple threads
+  query for different is support. 
   * TDBoW add binary I/O support, and compress the vocabulary using
   QuickLZ algorithm in default when binary output. On the other hand,
   it can still use YAML format for friendly reading. Specially, the
   DBoW2 vocabulary is supported for reading.
-  * (Still work-in-progress) TDBoW using k-means Ⅱ replaced k-means++.
+  * TDBoW using k-means Ⅱ replaced k-means++.
   * Some pieces of code have been rewritten to optimize speed.
   The interface of TDBoW has been simplified. TDBoW do not support
   compile version less than c++11.

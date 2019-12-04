@@ -86,7 +86,7 @@ std::vector<Vocabulary::DescriptorArray> loadFeatures() {
     std::vector<Vocabulary::DescriptorArray> features(IMAGES_NUM);
     std::stringstream ss;
     for(size_t i = 0; i < IMAGES_NUM; ++i) {
-        ss << "images/image" << i << ".png";
+        ss << PKG_DIR << "/demo/cv/images/image" << i << ".png";
 
         cv::Mat image = cv::imread(ss.str(), 0);
         cv::Mat mask;
