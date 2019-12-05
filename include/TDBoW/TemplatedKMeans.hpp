@@ -24,9 +24,7 @@
 #ifndef __ROCKAUTO_TEMPLATED_K_MEANS_HPP__
 #define __ROCKAUTO_TEMPLATED_K_MEANS_HPP__
 
-#include <limits>
 #include <random>
-#include <numeric>
 #include <functional>
 
 #include "TemplatedDescriptor.hpp"
@@ -177,16 +175,6 @@ void TemplatedKMeans<DescriptorUtil>::process(
         if(firstTime) {
             // random sample
             _Init(m_ulK, _Descriptors, _Centers, _DistF, _MeanF);
-            if(_Centers.size() < m_ulK) {
-                _Clusters.assign(_Centers.size(), std::vector<DescriptorConstPtr>());
-                for(size_t i = 0; i < _Centers.size(); i++) {
-                    _Clusters[i].emplace_back(std::make_shared<Descriptor>(_Centers[i]));
-                }
-                // Note that in this case, there are repeated descriptors, so the final
-                // clusters' count is not equals with descriptors.
-                return;
-            }
-
             firstTime = false;
         } else {
             // calculate cluster centres
@@ -310,11 +298,22 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKM2nd(const size_t& _K,
         std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M) {
     // Implements k-meansⅡ seeding algorithm
     const auto LIMIT = static_cast<size_t>(log(_Descriptors.size()) / log(2)) * _K;
+
+    if(_Descriptors.size() <= LIMIT) {
+        initiateClustersKMpp(_K, _Descriptors, _Centers, _F, _M);
+        return;
+    }
+
+    std::vector<size_t> choices(_Descriptors.size());
+    for(size_t i = 1; i < _Descriptors.size(); i++) {
+        choices[i] = i;
+    }
     std::vector<DescriptorConstPtr> seeds;
     seeds.reserve(LIMIT);
     for(size_t i = 0; i < LIMIT; i++) {
-        auto featureIdx = randomInt<size_t>(0, _Descriptors.size() - 1);
-        seeds.emplace_back(std::make_shared<Descriptor>(*_Descriptors[featureIdx]));
+        auto idx = randomInt<size_t>(0, choices.size() - 1);
+        seeds.emplace_back(std::make_shared<Descriptor>(*_Descriptors[choices[idx]]));
+        choices.erase(choices.begin() + idx);
     }
     std::vector<std::vector<DescriptorConstPtr>> ignored;
     TemplatedKMeans<DescriptorUtil>(_K).process(seeds, _Centers, ignored, initiateClustersKMpp, _F, _M);

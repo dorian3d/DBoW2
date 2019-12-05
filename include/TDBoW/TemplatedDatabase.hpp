@@ -57,8 +57,6 @@
 #ifndef __D_T_TEMPLATED_DATABASE__
 #define __D_T_TEMPLATED_DATABASE__
 
-#include <set>
-
 #include "IndexedFile.h"
 #include "TemplatedVocabulary.hpp"
 #include "QueryResults.h"
