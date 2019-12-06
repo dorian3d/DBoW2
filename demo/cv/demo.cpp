@@ -22,7 +22,7 @@
  */
 
 // TDBoW and CV2Eigen transformer
-#include "CVBridge.h" // this must be included before OpenCV
+#include <TDBoW/CVBridge.h> // this must be included before OpenCV
 
 // OpenCV
 #include <opencv2/core.hpp>
@@ -48,7 +48,7 @@ void testDatabase(const DescriptorsSet& _Features);
 // number of training images
 const size_t IMAGES_NUM = 4;
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void wait() {
     cout << endl << "Press enter to continue" << endl;
@@ -64,7 +64,8 @@ int main() {
 
     // In this simple case, we had not prepare too many data, so we
     // use the same data for both create and query.
-    auto copy = features;   // `make_const` will drop the original data, so make copy
+    // `make_shared`(inner method) will drop the original data, so make copy
+    auto copy = features;
     // DataSet type is only used in vocabulary create.
     auto dataset = Vocabulary::util::make_const(copy);
     // Vocabulary testing
@@ -83,7 +84,7 @@ int main() {
 std::vector<Vocabulary::DescriptorArray> loadFeatures() {
     cv::Ptr<cv::ORB> orb = cv::ORB::create();
     cout << "Extracting ORB features..." << endl;
-    std::vector<Vocabulary::DescriptorArray> features(IMAGES_NUM);
+    DescriptorsSet features(IMAGES_NUM);
     std::stringstream ss;
     for(size_t i = 0; i < IMAGES_NUM; ++i) {
         ss << PKG_DIR << "/demo/cv/images/image" << i << ".png";
@@ -157,7 +158,7 @@ void testVocabCreation(const ConstDataSet& _DataSet, const DescriptorsSet& _Feat
 void testDatabase(const DescriptorsSet& _Features) {
     cout << "Creating a small database..." << endl;
     // load the vocabulary from disk
-    Database db("small_voc.bin.qp", true, 0); // false = do not use direct index
+    Database db("small_voc.bin.qp", false); // false = do not use direct index
     // (so ignore the last param)
     // The direct index is useful if we want to retrieve the features that
     // belong to some vocabulary node.
@@ -186,5 +187,3 @@ void testDatabase(const DescriptorsSet& _Features) {
 }
 
 // ----------------------------------------------------------------------------
-
-

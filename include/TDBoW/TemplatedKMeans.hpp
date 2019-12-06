@@ -32,7 +32,6 @@
 namespace TDBoW {
 
 // local methods
-#define LINE_LOG(content) __line_log(__FILE__, __LINE__, (content))
 
 /**
  * @brief  Random float point value from [_Left, _Right)
@@ -280,7 +279,7 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(const size_t& _K,
             return;
         }
         if(sum < 0) {
-            throw std::runtime_error(LINE_LOG("get negative sum, please check the `distance()`"));
+            throw std::runtime_error(TDBOW_LOG("get negative sum, please check the `distance()`"));
         }
 
         auto limit = randomReal<distance_type>(0, sum);
@@ -347,7 +346,6 @@ Scalar randomInt(const Scalar& _Left, const Scalar& _Right) {
     return uniform(e);
 }
 
-#undef LINE_LOG
 
 }   // namespace TDBoW
 

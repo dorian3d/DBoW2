@@ -5,8 +5,13 @@ project(tdbow)
 ## Option setting ##
 ####################
 
-option(BUILD_PC_Demo    "Build PC demo" OFF)
-option(BUILD_CV_Demo    "Build CV demo" ON)
+option(BUILD_PC_Demo "Build PC demo"     ON)
+option(BUILD_CV_Demo "Build CV demo"     ON)
+option(ABSOLUTE_LOG  "Log absolute path" ON)
+
+if(NOT ABSOLUTE_LOG)
+  add_definitions(-DTDBOW_RELATIVE_LOG)
+endif()
 
 ## Compile as C++11
 add_compile_options(-std=c++11)
@@ -104,14 +109,28 @@ if(WIN32)
   set(LIB_SHARED "STATIC")
 endif(WIN32)
 add_library(${PROJECT_NAME} ${LIB_SHARED} ${TDBoW_SRCS} ${EXTRA_SRCS})
-include_directories(${TDBoW_INC} ${EXTRA_INCS})
+include_directories(include ${EXTRA_INCS})
 target_link_libraries(${PROJECT_NAME} ${TDBoW_LIB} ${EXTRA_LIBS})
 
 if(BUILD_CV_Demo)
   find_package(OpenCV REQUIRED)
   add_executable(cv_demo demo/cv/demo.cpp)
   target_link_libraries(cv_demo ${PROJECT_NAME} ${OpenCV_LIBS})
-  message(STATUS "`cv_demo` should be generated in ${PROJECT_BINARY_DIR}")
+endif()
+
+if(BUILD_PC_Demo)
+  find_package(OpenMP QUIET)
+  if(OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    add_definitions(-DFOUND_OPENMP)
+    message(STATUS "OpenMP Founded")
+  endif()
+  find_package(PCL 1.7.2 REQUIRED COMPONENTS common io keypoints features)
+  add_definitions(${PCL_DEFINITIONS})
+  add_executable(pc_demo demo/pc/demo.cpp)
+  target_include_directories(pc_demo PRIVATE ${PCL_INCLUDE_DIRS})
+  target_link_libraries(pc_demo ${PROJECT_NAME} ${PCL_LIBRARIES})
 endif()
 
 #############

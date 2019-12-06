@@ -51,7 +51,7 @@
    * Author Email  : smallchimney@foxmail.com
    * Created Time  : 2019-11-20 10:37:21
    * Last Modified : smallchimney
-   * Modified Time : 2019-12-03 11:21:06
+   * Modified Time : 2019-12-06 10:58:21
 ************************************************************************* */
 #ifndef __ROCKAUTO_DESCRIPTOR_HPP__
 #define __ROCKAUTO_DESCRIPTOR_HPP__
@@ -66,8 +66,10 @@
 namespace TDBoW {
 
 // local methods
-#define LINE_LOG(content) __line_log(__FILE__, __LINE__, (content))
-static std::string __line_log(const std::string&, const size_t&, const std::string&);
+#define TDBOW_LOG(args)\
+    ::TDBoW::__tdbow_line_str(__FILE__, __LINE__, ::std::stringstream() << args)
+template <typename T>
+static std::string __tdbow_line_str(const std::string&, const size_t&, std::basic_ostream<T>&);
 
 std::string toHex(const uint8_t& _Data) noexcept;
 uint8_t fromHex(const std::string& _Str) noexcept(false);
@@ -168,7 +170,7 @@ public:
      * @param  _Output The dataset can be shared
      * @return _Output
      */
-    static ConstDataSet& make_const(std::vector<std::vector<Descriptor>>& _Input) {
+    static ConstDataSet make_const(std::vector<std::vector<Descriptor>>& _Input) {
         return make_const(make_shared(_Input));
     }
 
@@ -184,24 +186,26 @@ public:
 
     // Descriptor mean value and distance
 
+#define TYPE_EQ(T1, T2) traits::type_traits<T1>::id() == traits::type_traits<T2>::id()
+
     static Descriptor _meanValue(
             const std::vector<DescriptorConstPtr>& _Descriptors,
             const MeanCallback& _Callback) noexcept(false) {
         if(_Descriptors.empty()) {
-            throw std::runtime_error(LINE_LOG("Cannot calculate mean value for empty set."));
+            throw std::runtime_error(TDBOW_LOG("Cannot calculate mean value for empty set."));
         }
         return _Callback(_Descriptors);
     }
 
     static Descriptor meanValue(const std::vector<DescriptorConstPtr>& _Descriptors) noexcept(false) {
-        if(typeid(TScalar) == typeid(uint8_t)) {
+        if(TYPE_EQ(TScalar, uint8_t)) {
             return _meanValue(_Descriptors, binaryMean);
-        } else if(typeid(TScalar) == typeid(float_t)) {
+        } else if(TYPE_EQ(TScalar, float_t)) {
             return _meanValue(_Descriptors, valueMean);
-        } else if(typeid(TScalar) == typeid(double_t)) {
+        } else if(TYPE_EQ(TScalar, double_t)) {
             return _meanValue(_Descriptors, valueMean);
         } else {
-            throw std::runtime_error(LINE_LOG("The scalar type is not support automatically, "
+            throw std::runtime_error(TDBOW_LOG("The scalar type is not support automatically, "
                                      "a processing function must be explicitly specified."));
         }
     }
@@ -213,17 +217,19 @@ public:
     }
 
     static distance_type distance(const Descriptor& _A, const Descriptor& _B) noexcept(false) {
-        if(typeid(TScalar) == typeid(uint8_t)) {
+        if(TYPE_EQ(TScalar, uint8_t)) {
             return _distance(_A, _B, binaryDistance);
-        } else if(typeid(TScalar) == typeid(float_t)) {
+        } else if(TYPE_EQ(TScalar, float_t)) {
             return _distance(_A, _B, valueDistance);
-        } else if(typeid(TScalar) == typeid(double_t)) {
+        } else if(TYPE_EQ(TScalar, double_t)) {
             return _distance(_A, _B, valueDistance);
         } else {
-            throw std::runtime_error(LINE_LOG("The scalar type is not support automatically, "
+            throw std::runtime_error(TDBOW_LOG("The scalar type is not support automatically, "
                                      "a processing function must be explicitly specified."));
         }
     }
+
+#undef TYPE_EQ
 
     template <typename Matrix>
     static void toBinary(const Matrix& _Mat, std::ostream& _Out);
@@ -242,10 +248,10 @@ public:
             const BinaryDescriptorArray& _Descriptor);
 
 protected:
-    static BinaryDescriptor binaryMean(const std::vector<BinaryDescriptorConstPtr>& _Descriptors);
+    static Descriptor binaryMean(const std::vector<DescriptorConstPtr>& _Descriptors);
     static Descriptor valueMean(const std::vector<DescriptorConstPtr>& _Descriptors);
 
-    static distance_type binaryDistance(const BinaryDescriptor& _A, const BinaryDescriptor& _B);
+    static distance_type binaryDistance(const Descriptor& _A, const Descriptor& _B);
     static distance_type valueDistance(const Descriptor& _A, const Descriptor& _B);
 
 };
@@ -256,7 +262,7 @@ typename TemplatedDescriptorUtil<TScalar, DescL>::DataSet&
 TemplatedDescriptorUtil<TScalar, DescL>::make_shared(
         std::vector<std::vector<Descriptor>>& _Input, DataSet& _Output) {
     if(_Input.empty()) {
-        throw std::runtime_error(LINE_LOG("Empty dataset."));
+        throw std::runtime_error(TDBOW_LOG("Empty dataset."));
     }
     _Output.clear();
     _Output.shrink_to_fit();
@@ -280,7 +286,7 @@ typename TemplatedDescriptorUtil<TScalar, DescL>::DataSet&
 TemplatedDescriptorUtil<TScalar, DescL>::make_shared(
         std::vector<DescriptorArray>& _Input, DataSet& _Output) {
     if(_Input.empty()) {
-        throw std::runtime_error(LINE_LOG("Empty dataset."));
+        throw std::runtime_error(TDBOW_LOG("Empty dataset."));
     }
     _Output.clear();
     _Output.shrink_to_fit();
@@ -318,15 +324,17 @@ TemplatedDescriptorUtil<TScalar, DescL>::make_const(const DataSet& _Input) {
 }
 
 template<typename TScalar, size_t L>
-typename TemplatedDescriptorUtil<TScalar, L>::BinaryDescriptor
-TemplatedDescriptorUtil<TScalar, L>::binaryMean(const std::vector<BinaryDescriptorConstPtr>& _Descriptors) {
-    BinaryDescriptor mean = BinaryDescriptor::Zero();
+typename TemplatedDescriptorUtil<TScalar, L>::Descriptor
+TemplatedDescriptorUtil<TScalar, L>::binaryMean(const std::vector<DescriptorConstPtr>& _Descriptors) {
+    Descriptor mean = Descriptor::Zero();
     std::vector<size_t> sum(L * 8, 0);
     if(_Descriptors.size() == 1) {
         return *_Descriptors[0];
     }
     for(const auto& descriptor : _Descriptors) {
-        const TScalar* d = descriptor -> data();
+        // For uint8_t descriptor, the cast operation make no sense,
+        // this is only for other type can compile, but should never execute.
+        const auto* d = reinterpret_cast<const uint8_t*>(descriptor -> data());
         for(size_t i = 0; i < L; i++, d++) {
             if(*d & (1 << 7)) ++sum[i * 8    ];
             if(*d & (1 << 6)) ++sum[i * 8 + 1];
@@ -338,7 +346,9 @@ TemplatedDescriptorUtil<TScalar, L>::binaryMean(const std::vector<BinaryDescript
             if(*d & (1))      ++sum[i * 8 + 7];
         }
     }
-    TScalar* p = mean.data();
+    // For uint8_t descriptor, the cast operation make no sense,
+    // this is only for other type can compile, but should never execute.
+    auto* p = reinterpret_cast<uint8_t*>(mean.data());
     const auto N2 = _Descriptors.size() / 2 + _Descriptors.size() % 2;
     for(size_t i = 0; i < sum.size(); ++i) {
         if(sum[i] >= N2) {
@@ -352,11 +362,10 @@ TemplatedDescriptorUtil<TScalar, L>::binaryMean(const std::vector<BinaryDescript
 template<typename TScalar, size_t L>
 typename TemplatedDescriptorUtil<TScalar, L>::Descriptor
 TemplatedDescriptorUtil<TScalar, L>::valueMean(const std::vector<DescriptorConstPtr>& _Descriptors) {
-    Descriptor mean;
-    auto num = _Descriptors.size();
+    Descriptor mean = Descriptor::Zero();
+    const auto num = static_cast<TScalar>(_Descriptors.size());
     for(const auto& p : _Descriptors) {
-        for(size_t i = 0; i < L; i++)
-            mean[i] += (*p)[i] / num;
+        mean += (*p) / num;
     }
     return mean;
 }
@@ -364,7 +373,7 @@ TemplatedDescriptorUtil<TScalar, L>::valueMean(const std::vector<DescriptorConst
 template<typename TScalar, size_t L>
 typename TemplatedDescriptorUtil<TScalar, L>::distance_type
 TemplatedDescriptorUtil<TScalar, L>::binaryDistance(
-        const BinaryDescriptor& _A, const BinaryDescriptor& _B) {
+        const Descriptor& _A, const Descriptor& _B) {
     // Bit count function got from:
     // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
     // This implementation assumes that a.cols (CV_8U) % sizeof(uint64_t) == 0
@@ -451,7 +460,7 @@ void TemplatedDescriptorUtil<TScalar, L>::fromString(const std::string& _In, Des
         *p = fromHex(hex);
     }
     if(ss.fail()) {
-        throw std::runtime_error(LINE_LOG("Invalid data."));
+        throw std::runtime_error(TDBOW_LOG("Invalid data."));
     }
     ss.clear();
     ss.str("");
@@ -532,7 +541,7 @@ char int2hex(const unsigned& _Val) noexcept(false) {
     case 10: case 11: case 12: case 13: case 14: case 15:
         return static_cast<char>(_Val + 'A' - 10);
     default:
-        throw std::runtime_error(LINE_LOG("Invalid value."));
+        throw std::runtime_error(TDBOW_LOG("Invalid value."));
     }
 }
 
@@ -546,7 +555,7 @@ unsigned hex2int(const char& _Ch) noexcept(false) {
         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
             return static_cast<unsigned>(_Ch - 'A' + 10);
         default:
-            throw std::runtime_error(LINE_LOG("Invalid value."));
+            throw std::runtime_error(TDBOW_LOG("Invalid value."));
     }
 }
 
@@ -560,13 +569,13 @@ std::string toHex(const uint8_t& _Data) noexcept {
 
 uint8_t fromHex(const std::string& _Str) noexcept(false) {
     if(_Str.length() != 2) {
-        throw std::runtime_error(LINE_LOG("Not TDBoW default descriptor"
+        throw std::runtime_error(TDBOW_LOG("Not TDBoW default descriptor"
                                  "string(hex), please use custom fromString()"));
     }
     return static_cast<uint8_t>(hex2int(_Str[0]) * 16 + hex2int(_Str[1]));
 }
 
-#if ROCKAUTO_RELATIVE_LOG
+#ifdef TDBOW_RELATIVE_LOG
 #ifndef FOUND_BOOST_1_60
 // since Ubuntu 16.04 install the boost with version 1.58, we don't use boost::filesystem::relative
 boost::filesystem::path relativeTo(
@@ -598,12 +607,13 @@ boost::filesystem::path relativeTo(
 #endif
 #endif
 
-std::string __line_log(const std::string& _File, const size_t& _Line, const std::string& _Content) {
+template <typename T>
+std::string __tdbow_line_str(const std::string& _File, const size_t& _Line, std::basic_ostream<T>& _Content) {
     boost::filesystem::path file(_File);
     static std::stringstream ss;
     ss.clear();
     ss.str("");
-#if ROCKAUTO_RELATIVE_LOG
+#ifdef TDBOW_RELATIVE_LOG
     static const boost::filesystem::path ROOT(PKG_DIR);
 #ifndef FOUND_BOOST_1_60
     const auto relPath = relativeTo(ROOT, file);
@@ -612,12 +622,10 @@ std::string __line_log(const std::string& _File, const size_t& _Line, const std:
 #endif
     ss << relPath.native() << ':' << _Line << ": " << _Content << std::endl;
 #else
-    ss << file.native() << ':' << _Line << ": " << _Content << std::endl;
+    ss << file.native() << ':' << _Line << ": " << _Content.rdbuf() << std::endl;
 #endif
     return ss.str();
 }
-
-#undef LINE_LOG
 
 }   // namespace TDBoW
 

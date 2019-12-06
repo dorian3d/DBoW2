@@ -24,7 +24,7 @@
 #ifndef __ROCKAUTO_CV_BRIDGE_H__
 #define __ROCKAUTO_CV_BRIDGE_H__
 
-#include "TemplatedDatabase.hpp"
+#include "TDBoW.h"
 #include <opencv2/core/eigen.hpp>   // this must be included after <eigen3/Eigen/Core>
 
 namespace TDBoW {

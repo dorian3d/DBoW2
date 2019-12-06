@@ -23,7 +23,7 @@
  */
 
 #include <fstream>
-#include <QueryResults.h>
+#include <TDBoW/QueryResults.h>
 
 using std::ostream;
 using std::endl;

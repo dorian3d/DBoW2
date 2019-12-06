@@ -8,8 +8,7 @@ a feature vocabulary. TDBoW also implements an image database with inverted and 
 pointclouds (or images) and enabling quick queries and feature comparisons.
 The main differences with the previous DBow2 library are:
 
-  * (Still work-in-progress) TDBoW support 3D descriptor calculated
-  from pointcloud.
+  * TDBoW support 3D descriptor calculated from pointcloud.
   * TDBoW classes don't need to inheritance the templated base class,
   since TDBoW using Eigen for common represent.
   * TDBoW won't compile with OpenCV any more, although it can still
@@ -95,10 +94,18 @@ For example, to work with cv::ORB descriptors, which contained by 256 bits (32 b
 is designed as `Eigen::Matrix<uint8_t, 1, 32, Eigen::RowMajor>`, so we set `TScalar` to `uint8_t`, and
 set `L` as `32`.
 
-Default `meanValue`, `distance`, `toString` and `fromString` methods are already implemented, but can
-still easily override by lambda methods.
+Default `meanValue`, `distance`, `toString` and `fromString` methods are already
+[implemented](include/TDBoW/TemplatedDescriptor.hpp), but can still easily override by lambda methods.
+
+### Use TDBoW in PC mode
+
+[PCL](https://github.com/PointCloudLibrary/pcl) is a very active open source library, which contains
+many kinds of pointcloud descriptors implement. So we add [PCBridge.h](include/TDBoW/PCBridge.h) for
+PCL users.
+More details of the usage can be founded in [pc_demo](demo/pc/demo.cpp).
 
 ### Use TDBoW in CV mode
 
-OpenCV is a very strong library, which contains many kinds of image descriptors implement. So we add
-`CVBridge.h` for OpenCV users. More details can be founded in [cv_demo](demo/cv/demo.cpp).
+[OpenCV](https://github.com/opencv/opencv) is a very strong library, which contains many kinds of image
+descriptors implement. So we add [CVBridge.h](include/TDBoW/CVBridge.h) for OpenCV users.
+More details can be founded in [cv_demo](demo/cv/demo.cpp).

@@ -14,27 +14,24 @@
  * limitations under the License.
  **************************************************************************/
 /* *************************************************************************
-   * File Name     : SpinLock.cpp
+   * File Name     : PCBridge.h
    * Author        : smallchimney
    * Author Email  : smallchimney@foxmail.com
-   * Created Time  : 2019-12-04 13:43:21
+   * Created Time  : 2019-12-05 17:01:29
    * Last Modified : smallchimney
-   * Modified Time : 2019-12-05 17:07:41
+   * Modified Time : 2019-12-05 17:04:28
 ************************************************************************* */
-#include <TDBoW/SpinLock.h>
+#ifndef __ROCKAUTO_PC_BRIDGE_H__
+#define __ROCKAUTO_PC_BRIDGE_H__
+
+#include "TDBoW.h"
 
 namespace TDBoW {
+    /** @brief FPFH-33 Vocabulary */
+    typedef TemplatedVocabulary<float, 33> FPFH33Vocabulary;
 
-SpinLock::SpinLock(std::atomic_bool& _Flag): m_bFlag(_Flag) {
-    while(true) {
-        bool excepted = false;
-        if(m_bFlag.compare_exchange_strong(excepted, true)) {
-            break;
-        }
-    }
-}
-SpinLock::~SpinLock() {
-    m_bFlag = false;
+    /** @brief FPFH-33 Database */
+    typedef TemplatedDatabase<FPFH33Vocabulary> FPFH33Database;
 }
 
-}   // namespace TDBoW
+#endif //__ROCKAUTO_PC_BRIDGE_H__

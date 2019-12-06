@@ -87,8 +87,6 @@ namespace TDBoW {
 template<typename T>
 static void operator << (T& i, const YAML::Node& node);
 
-#define LINE_LOG(content) __line_log(__FILE__, __LINE__, (content))
-
 /// @param Descriptor class of descriptor
 template <typename TScalar, size_t DescL>
 /// Generic Vocabulary
@@ -123,8 +121,10 @@ public:
             WeightingType _Weighting = TF_IDF, ScoringType _Scoring = L1_NORM);
   
     /**
-     * Creates the vocabulary by loading a file
-     * @param _Filename
+     * @breif  Creates the vocabulary by loading a file
+     * @author smallchimney
+     * @param  _Filename
+     * @param  _Mode      Which method to process the file
      */
     explicit TemplatedVocabulary(
             const std::string& _Filename, LoadMode _Mode = AUTO) noexcept(false);
@@ -135,7 +135,7 @@ public:
     TemplatedVocabulary(TemplatedVocabulary<TScalar, DescL>& _Vocab) = delete;
 
     /**
-     * Memory move constructor
+     * @breif Memory move constructor
      * @param _Vocab  original vocabulary which will drop all the data
      */
     TemplatedVocabulary(TemplatedVocabulary<TScalar, DescL>&& _Vocab) noexcept;
@@ -571,7 +571,7 @@ TemplatedVocabulary<TScalar, DescL>::TemplatedVocabulary(
         const ScoringType _Scoring) noexcept(false)
         : m_uiK(_K), m_uiL(_L), m_pScoringObj(nullptr), m_pNodes(nullptr) {
     if(pow(_K, _L) >= std::numeric_limits<NodeId>::max()) {
-        throw std::runtime_error(LINE_LOG("Too large for the vocabulary scale."));
+        throw std::runtime_error(TDBOW_LOG("Too large for the vocabulary scale."));
     }
     setWeightingType(_Weighting);
     setScoringType(_Scoring);
@@ -774,7 +774,7 @@ NodeId TemplatedVocabulary<TScalar, DescL>::getParentNode(
         WordId _Wid, int _LevelsUp) const noexcept(false) {
     // confirm the parameters, be careful when change the structure of words.
     if(_LevelsUp < 0 || _Wid < 0 || _Wid >= m_aWords.size()) {
-       throw std::runtime_error(LINE_LOG("cannot find such node in this vocabulary."));
+       throw std::runtime_error(TDBOW_LOG("cannot find such node in this vocabulary."));
     }
     NodeId ret = m_aWords[_Wid]; // node id
     while(_LevelsUp--) {
@@ -827,10 +827,8 @@ template <typename TScalar, size_t DescL>
 typename TemplatedVocabulary<TScalar, DescL>::Descriptor
 TemplatedVocabulary<TScalar, DescL>::getWord(WordId _Wid) const noexcept(false) {
     if(_Wid < 0 || _Wid >= m_aWords.size()) {
-        std::stringstream ss;
-        ss << "Required word ID(" << _Wid << ") is out of range(0..."
-           << m_aWords.size() - 1 << ").";
-        throw std::runtime_error(LINE_LOG(ss.str()));
+        throw std::runtime_error(TDBOW_LOG("Required word ID(" << _Wid << ") "
+                                 "is out of range(0..." << m_aWords.size() - 1 << ")."));
     }
     return (*m_pNodes)[m_aWords[_Wid]].descriptor;
 }
@@ -839,10 +837,8 @@ template <typename TScalar, size_t DescL>
 WordValue TemplatedVocabulary<TScalar, DescL>::getWordWeight(
         WordId _Wid) const noexcept(false) {
     if(_Wid < 0 || _Wid >= m_aWords.size()) {
-        std::stringstream ss;
-        ss << "Required word ID(" << _Wid << ") is out of range(0..."
-           << m_aWords.size() - 1 << ").";
-        throw std::runtime_error(LINE_LOG(ss.str()));
+        throw std::runtime_error(TDBOW_LOG("Required word ID(" << _Wid << ") "
+                                 "is out of range(0..." << m_aWords.size() - 1 << ")."));
     }
     return (*m_pNodes)[m_aWords[_Wid]].weight;
 }
@@ -852,7 +848,7 @@ TemplatedVocabulary<TScalar, DescL>&
 TemplatedVocabulary<TScalar, DescL>::setScoringType(ScoringType _Type) noexcept(false) {
     if(!m_pScoringObj || m_eScoring != _Type) {
         if(m_bInit) {
-            throw std::runtime_error(LINE_LOG("The vocabulary is "
+            throw std::runtime_error(TDBOW_LOG("The vocabulary is "
                     "already created, must recreated to alter the scoring type"));
         }
         m_eScoring = _Type;
@@ -866,7 +862,7 @@ TemplatedVocabulary<TScalar, DescL>&
 TemplatedVocabulary<TScalar, DescL>::setWeightingType(WeightingType _Type) noexcept(false) {
     if(m_eWeighting != _Type) {
         if(m_bInit) {
-            throw std::runtime_error(LINE_LOG("The vocabulary is "
+            throw std::runtime_error(TDBOW_LOG("The vocabulary is "
                     "already created, must recreated to alter the scoring type"));
         }
         m_eWeighting = _Type;
@@ -911,7 +907,7 @@ void TemplatedVocabulary<TScalar, DescL>::load(
         file = boost::filesystem::path(PKG_DIR)/"vocab"/_Filename;
     }
     if(!boost::filesystem::exists(file) || boost::filesystem::is_directory(file)) {
-        throw std::runtime_error(LINE_LOG(file.native() + " not exist or is a directory!"));
+        throw std::runtime_error(TDBOW_LOG(file.native() << " not exist or is a directory!"));
     }
     switch(_Mode) {
         case LoadMode::BINARY:
@@ -973,11 +969,11 @@ void TemplatedVocabulary<TScalar, DescL>::saveYAML(
         const boost::filesystem::path& _File,
         const std::function<std::string(Descriptor)>& _F) const noexcept(false) {
     if(m_pNodes == nullptr) {
-        throw std::runtime_error(LINE_LOG("No data to save."));
+        throw std::runtime_error(TDBOW_LOG("No data to save."));
     }
     std::ofstream out(_File.native());
     if(!out) {
-        throw std::runtime_error(LINE_LOG("Cannot open the output stream."));
+        throw std::runtime_error(TDBOW_LOG("Cannot open the output stream."));
     }
     YAML::Emitter yaml(out);
     yaml << YAML::BeginDoc << YAML::BeginMap
@@ -1032,12 +1028,12 @@ template <typename TScalar, size_t DescL>
 void TemplatedVocabulary<TScalar, DescL>::saveBinary(
         const boost::filesystem::path& _File, bool _Compressed) const noexcept(false) {
     if(m_pNodes == nullptr) {
-        throw std::runtime_error(LINE_LOG("No data to save."));
+        throw std::runtime_error(TDBOW_LOG("No data to save."));
     }
     std::ofstream out(_File.native(), std::ios::out|std::ios::binary);
     if(!out) {
-        throw std::runtime_error(LINE_LOG(
-                "Could not open file :" + _File.native() + " for writing."));
+        throw std::runtime_error(TDBOW_LOG(
+                "Could not open file :" << _File.native() << " for writing."));
     }
     write(out, _Compressed);
     out.close();
@@ -1096,10 +1092,10 @@ void TemplatedVocabulary<TScalar, DescL>::loadYAML(
             (*m_pNodes)[nodeId].word_id = wordId;
         }
     } catch(YAML::Exception& e) {
-        throw std::runtime_error(LINE_LOG(
-                std::string("Vocabulary file may be invalid: ") + e.what()));
+        throw std::runtime_error(TDBOW_LOG(
+                "Vocabulary file may be invalid: " << e.what()));
     } catch(std::runtime_error& e) {
-        throw std::runtime_error(LINE_LOG(e.what()));
+        throw std::runtime_error(TDBOW_LOG(e.what()));
     }
 }
 
@@ -1109,8 +1105,8 @@ void TemplatedVocabulary<TScalar, DescL>::loadBinary(
         const boost::filesystem::path& _File) {
     std::ifstream in(_File.native(), std::ios::in|std::ios::binary);
     if(!in) {
-        throw std::runtime_error(LINE_LOG(
-                "Could not open file :" + _File.native() + " for reading."));
+        throw std::runtime_error(TDBOW_LOG(
+                "Could not open file :" << _File.native() << " for reading."));
     }
     read(in);
     in.close();
@@ -1201,7 +1197,7 @@ void TemplatedVocabulary<TScalar, DescL>::read(std::istream& _In) noexcept(false
     auto valL = DescL;  // generate the var with the same type of L
     _In.read((char*)&valL, sizeof(valL));
     if(idScalar != ID_SCALAR || valL != VALUE_L) {
-        throw std::runtime_error(LINE_LOG("The descriptor's format cannot be matched."));
+        throw std::runtime_error(TDBOW_LOG("The descriptor's format cannot be matched."));
     }
     // Whether compressed
     bool compressed;
@@ -1307,7 +1303,7 @@ template <typename TScalar, size_t DescL>
 void TemplatedVocabulary<TScalar, DescL>::_getFeatures(
         const ConstDataSet& _TrainingData, std::vector<DescriptorConstPtr>& _Features) const noexcept(false) {
     if(_TrainingData.empty()) {
-        throw std::runtime_error(LINE_LOG("Empty dataset."));
+        throw std::runtime_error(TDBOW_LOG("Empty dataset."));
     }
     _Features.clear();
     _Features.shrink_to_fit();
@@ -1318,7 +1314,7 @@ void TemplatedVocabulary<TScalar, DescL>::_getFeatures(
         }
     }
     if(_Features.empty()) {
-        throw std::runtime_error(LINE_LOG("Empty dataset."));
+        throw std::runtime_error(TDBOW_LOG("Empty dataset."));
     }
 }
 
@@ -1327,7 +1323,7 @@ void TemplatedVocabulary<TScalar, DescL>::_transform_thread(
         const std::vector<Descriptor>& _Features, BowVector& _BowVec,
         const FeatureVectorPtr& _FeatVec, const unsigned _LevelsUp) const {
     if(!m_bInit) {
-        throw std::runtime_error(LINE_LOG(
+        throw std::runtime_error(TDBOW_LOG(
                 "The vocabulary is empty, must created before transform."));
     }
     _BowVec.clear();
@@ -1520,6 +1516,5 @@ void operator << (T& i, const YAML::Node& node) {
 
 } // namespace TDBoW
 
-#undef LINE_LOG
 
 #endif

@@ -22,7 +22,7 @@
  *
  */
 
-#include <FeatureVector.h>
+#include <TDBoW/FeatureVector.h>
 
 namespace TDBoW {
 

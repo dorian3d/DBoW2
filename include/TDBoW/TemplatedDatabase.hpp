@@ -61,8 +61,6 @@
 #include "TemplatedVocabulary.hpp"
 #include "QueryResults.h"
 
-#define LINE_LOG(content) __line_log(__FILE__, __LINE__, (content))
-
 namespace TDBoW {
 
 /// @param Descriptor class of descriptor
@@ -118,6 +116,15 @@ public:
      *                   relative from the "vocab" direction
      */
     explicit TemplatedDatabase(const std::string& _Filename,
+            bool _UseDirectIdx = true, unsigned _DirectIdxLevel = 0);
+
+    /**
+     * @brief For now I decide to drop the save/load function for database,
+     *        because it's a temperature data, for query history only.
+     * @param _Filename  Absolute/relative file path, will search
+     *                   relative from the "vocab" direction
+     */
+    explicit TemplatedDatabase(const char* _Filename,
             bool _UseDirectIdx = true, unsigned _DirectIdxLevel = 0);
 
     virtual ~TemplatedDatabase() = default;
@@ -273,11 +280,11 @@ public:
      */
     const FeatureVector& retrieveFeatures(const EntryId _ID) const noexcept(false) {
         if(m_bUseDI) {
-            throw std::runtime_error(LINE_LOG("Direct index file not built."));
+            throw std::runtime_error(TDBOW_LOG("Direct index file not built."));
         }
         // Confirm the parameters, be careful when change the structure of database.
         if(_ID < 0 || _ID >= size()) {
-            throw std::runtime_error(LINE_LOG("Required entry not existed."));
+            throw std::runtime_error(TDBOW_LOG("Required entry not existed."));
         }
         return m_aDFile[_ID];
     }
@@ -397,8 +404,9 @@ template <class Vocabulary>
 TemplatedDatabase<Vocabulary>::TemplatedDatabase(
         const bool _UseDirectIdx, const unsigned _DirectIdxLevel,
         VocabularyPtr& _Vocab)
-        : m_pVocab(std::move(_Vocab)), m_bUseDI(_UseDirectIdx),
+        : m_pVocab(nullptr), m_bUseDI(_UseDirectIdx),
         m_uiDILevel(_DirectIdxLevel), m_ulNumEntries(0) {
+    setVocabulary(std::move(_Vocab));
 }
 
 template <class Vocabulary>
@@ -417,6 +425,15 @@ TemplatedDatabase<Vocabulary>::TemplatedDatabase(const std::string& _Filename,
     setVocabulary(VocabularyPtr(new Vocabulary(_Filename)));
 }
 
+template <class Vocabulary>
+TemplatedDatabase<Vocabulary>::TemplatedDatabase(const char* _Filename,
+        const bool _UseDirectIdx, const unsigned _DirectIdxLevel)
+        : m_pVocab(nullptr), m_bUseDI(_UseDirectIdx),
+          m_uiDILevel(_DirectIdxLevel), m_ulNumEntries(0) {
+    setVocabulary(VocabularyPtr(new Vocabulary(_Filename)));
+}
+
+
 /* ********************************************************************************
  *                              FUNCTIONAL METHODS                                *
  ******************************************************************************** */
@@ -433,8 +450,9 @@ EntryId TemplatedDatabase<Vocabulary>::add(
     auto& bowRet = _BowVec ? *_BowVec : ignored;
     // Feature vector result is optional according to the {@code m_bUseDI} flag.
     // We will still return the value when required, but not added.
-    m_pVocab -> transform(_Features, bowRet, _FeatVec, m_uiDILevel);
-    auto featRet = m_bUseDI ? _FeatVec : nullptr;
+    auto featPlaceholder = std::make_shared<FeatureVector>();
+    auto featRet = _FeatVec != nullptr ? _FeatVec : (m_bUseDI ? featPlaceholder : nullptr);
+    m_pVocab -> transform(_Features, bowRet, featRet, m_uiDILevel);
     return add(bowRet, featRet);
 }
 
@@ -463,7 +481,7 @@ EntryId TemplatedDatabase<Vocabulary>::add(
     // Update direct index file
     if(m_bUseDI) {
         if(_FeatVec == nullptr) {
-            throw std::runtime_error(LINE_LOG(
+            throw std::runtime_error(TDBOW_LOG(
                     "Current setting is \"USE_DI_ON\", "
                     "so the feature vector is required."));
         }
@@ -531,7 +549,7 @@ TemplatedDatabase<Vocabulary>::updateParam(const bool _UseDI,
         const unsigned _DILevel) noexcept(false) {
     if(m_bUseDI != _UseDI || m_uiDILevel != _DILevel) {
         if(!empty()) {
-            throw std::runtime_error(LINE_LOG(
+            throw std::runtime_error(TDBOW_LOG(
                     "The database is not empty, cannot change "
                     "the parameters."));
         }
@@ -568,7 +586,7 @@ template <class Vocabulary>
 void TemplatedDatabase<Vocabulary>::save(
         const std::string& _Filename, bool _Binary) const noexcept(false) {
     if(!m_pVocab) {
-        throw std::runtime_error(LINE_LOG("No active vocabulary."));
+        throw std::runtime_error(TDBOW_LOG("No active vocabulary."));
     }
     m_pVocab -> save(_Filename, _Binary);
 }
@@ -592,6 +610,5 @@ std::ostream& operator<<(std::ostream& _Out, const TemplatedDatabase<Vocabulary>
 
 } // namespace TDBoW
 
-#undef LINE_LOG
 
 #endif

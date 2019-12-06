@@ -22,8 +22,7 @@
  *
  */
 
-#include <TemplatedVocabulary.hpp>
-#include <BowVector.h>
+#include <TDBoW/TemplatedVocabulary.hpp>
 
 #include <numeric>
 
