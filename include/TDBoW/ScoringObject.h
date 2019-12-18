@@ -54,8 +54,8 @@
  *
  */
 
-#ifndef __D_T_SCORING_OBJECT__
-#define __D_T_SCORING_OBJECT__
+#ifndef __ROCKAUTO_TDBOW_SCORING_OBJECT_H__
+#define __ROCKAUTO_TDBOW_SCORING_OBJECT_H__
 
 #include "IndexedFile.h"
 #include <functional>
@@ -240,4 +240,4 @@ __SCORING_CLASS(DotProductScoring, false, L1);
   
 } // namespace TDBoW
 
-#endif
+#endif  // __ROCKAUTO_TDBOW_SCORING_OBJECT_H__

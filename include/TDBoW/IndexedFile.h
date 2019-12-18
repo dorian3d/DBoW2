@@ -21,8 +21,8 @@
    * Last Modified : smallchimney
    * Modified Time : 2019-12-04 11:04:27
 ************************************************************************* */
-#ifndef __ROCKAUTO_INDEXED_FILE_H__
-#define __ROCKAUTO_INDEXED_FILE_H__
+#ifndef __ROCKAUTO_TDBOW_INDEXED_FILE_H__
+#define __ROCKAUTO_TDBOW_INDEXED_FILE_H__
 
 #include "FeatureVector.h"
 #include "QueryResults.h"
@@ -82,4 +82,4 @@ typedef std::vector<FeatureVector> DirectFile;
 
 }
 
-#endif //__ROCKAUTO_INDEXED_FILE_H__
+#endif //__ROCKAUTO_TDBOW_INDEXED_FILE_H__

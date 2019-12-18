@@ -54,8 +54,8 @@
  *
  */
 
-#ifndef __D_T_BOW_VECTOR__
-#define __D_T_BOW_VECTOR__
+#ifndef __ROCKAUTO_TDBOW_BOW_VECTOR_H__
+#define __ROCKAUTO_TDBOW_BOW_VECTOR_H__
 
 #include "traits.h"
 #include "SpinLock.h"
@@ -119,6 +119,7 @@ public:
 	typedef trait<BowVector>::ConstPtr ConstPtr;
 
 	// continue public some declaring
+	typedef Base::iterator       iterator;
 	typedef Base::const_iterator const_iterator;
 
 	/** 
@@ -132,6 +133,8 @@ public:
 	 * Destructor
 	 */
 	~BowVector() = default;
+
+	BowVector& operator =(const BowVector& _Obj);
 
 	/**
 	 * Adds a value to a word value existing in the vector, or creates a new
@@ -189,4 +192,4 @@ typedef BowVector::ConstPtr BowVectorConstPtr;
 
 } // namespace TDBoW
 
-#endif
+#endif	// __ROCKAUTO_TDBOW_BOW_VECTOR_H__

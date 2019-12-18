@@ -41,13 +41,13 @@ typedef TDBoW::FPFH33Database    Database;
 typedef TDBoW::FPFH33Vocabulary  Vocabulary;
 typedef Vocabulary::Descriptor   Descriptor;
 typedef Vocabulary::ConstDataSet ConstDataSet;
-typedef std::vector<std::vector<Descriptor>> DescriptorsSet;
+typedef Vocabulary::DescriptorsSet DescriptorsSet;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 std::vector<std::string> loadFeatures(DescriptorsSet&);
 void testVocabCreation(const ConstDataSet&, const DescriptorsSet&, const std::vector<std::string>&);
-void testDatabase(const DescriptorsSet& _Features);
+void testDatabase(const DescriptorsSet&);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -59,7 +59,7 @@ void wait() {
 // ----------------------------------------------------------------------------
 
 int main() {
-    // Load files, calculate ORB descriptors and do transform
+    // Load files, calculate FPFH-33 descriptors and do transform
     // DescriptorArray and Descriptor are recommended types when query
     DescriptorsSet features;
     auto files = loadFeatures(features);
@@ -230,7 +230,6 @@ void testDatabase(const DescriptorsSet& _Features) {
     // (so ignore the last param)
     // The direct index is useful if we want to retrieve the features that
     // belong to some vocabulary node.
-    // db creates a copy of the vocabulary, we may get rid of "voc" now
 
     // add images to the database
     for(const auto& feature : _Features) {

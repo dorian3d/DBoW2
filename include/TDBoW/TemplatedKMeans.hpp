@@ -19,7 +19,7 @@
    * Author Email  : smallchimney@foxmail.com
    * Created Time  : 2019-11-27 14:01:21
    * Last Modified : smallchimney
-   * Modified Time : 2019-12-02 19:24:48
+   * Modified Time : 2019-12-14 21:56:40
 ************************************************************************* */
 #ifndef __ROCKAUTO_TEMPLATED_K_MEANS_HPP__
 #define __ROCKAUTO_TEMPLATED_K_MEANS_HPP__
@@ -69,16 +69,14 @@ template <class DescriptorUtil>
 class TemplatedKMeans {
 protected:
     // Load the typename from DescriptorUtil
-    typedef typename DescriptorUtil::distance_type       distance_type;
-    typedef typename DescriptorUtil::Descriptor          Descriptor;
-    typedef typename DescriptorUtil::DescriptorPtr       DescriptorPtr;
-    typedef typename DescriptorUtil::DescriptorConstPtr  DescriptorConstPtr;
-    typedef typename DescriptorUtil::MeanCallback        MeanCallback;
-    typedef typename DescriptorUtil::DistanceCallback    DistanceCallback;
+    typedef typename DescriptorUtil::distance_type    distance_type;
+    typedef typename DescriptorUtil::MeanCallback     MeanCallback;
+    typedef typename DescriptorUtil::DistanceCallback DistanceCallback;
+    TDBOW_DESCRIPTOR_DEF(DescriptorUtil)
 
 public:
     typedef std::function<void(const size_t&, const std::vector<DescriptorConstPtr>&,
-            std::vector<Descriptor>&, DistanceCallback, MeanCallback)> InitMethods;
+            DescriptorArray&, DistanceCallback, MeanCallback)> InitMethods;
 
     TemplatedKMeans() = delete;
     TemplatedKMeans(const size_t& _K): m_ulK(_K) {}
@@ -96,7 +94,7 @@ public:
      * @param  _MeanF           Mean value function.
      */
     void process(const std::vector<DescriptorConstPtr>& _Descriptors,
-                 std::vector<Descriptor>& _Centers,
+                 DescriptorArray& _Centers,
                  std::vector<std::vector<DescriptorConstPtr>>& _Clusters,
                  InitMethods _Init = initiateClustersKM2nd,
                  DistanceCallback _DistF = &DescriptorUtil::distance,
@@ -114,7 +112,7 @@ protected:
      */
     static void initiateClustersKM(const size_t& _K,
             const std::vector<DescriptorConstPtr>& _Descriptors,
-            std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M);
+            DescriptorArray& _Centers, DistanceCallback _F, MeanCallback _M);
 
     /**
      * @breif  Found k clusters' center from the given descriptor sets
@@ -126,7 +124,7 @@ protected:
      */
     static void initiateClustersKMpp(const size_t& _K,
             const std::vector<DescriptorConstPtr>& _Descriptors,
-            std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M);
+            DescriptorArray& _Centers, DistanceCallback _F, MeanCallback _M);
 
     /**
      * @breif  Found k clusters' center from the given descriptor sets
@@ -138,7 +136,7 @@ protected:
      */
     static void initiateClustersKM2nd(const size_t& _K,
             const std::vector<DescriptorConstPtr>& _Descriptors,
-            std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M);
+            DescriptorArray& _Centers, DistanceCallback _F, MeanCallback _M);
 
 
 private:
@@ -148,7 +146,7 @@ private:
 template <class DescriptorUtil>
 void TemplatedKMeans<DescriptorUtil>::process(
         const std::vector<DescriptorConstPtr>& _Descriptors,
-        std::vector<Descriptor>& _Centers,
+        DescriptorArray& _Centers,
         std::vector<std::vector<DescriptorConstPtr>>& _Clusters,
         InitMethods _Init, DistanceCallback _DistF, MeanCallback _MeanF) noexcept(false) {
     _Centers.clear();_Centers.shrink_to_fit();
@@ -169,6 +167,7 @@ void TemplatedKMeans<DescriptorUtil>::process(
     bool firstTime = true;
     // to check if clusters move after iterations
     std::vector<size_t> currentBelong, previousBelong;
+    distance_type loss; size_t iterCount = 0;
     while(true) {
         // 1. Calculate clusters
         if(firstTime) {
@@ -197,7 +196,7 @@ void TemplatedKMeans<DescriptorUtil>::process(
         // calculate distances to cluster centers
         _Clusters.assign(_Centers.size(), std::vector<DescriptorConstPtr>());
         currentBelong.resize(_Descriptors.size());
-
+        loss = 0;
         for(size_t i = 0; i < _Descriptors.size(); i++) {
             const auto& descriptor = *_Descriptors[i];
             distance_type min = _DistF(descriptor, _Centers[0]);
@@ -209,9 +208,11 @@ void TemplatedKMeans<DescriptorUtil>::process(
                     minIdx = idx;
                 }
             }
+            loss += min;
             _Clusters[minIdx].emplace_back(_Descriptors[i]);
             currentBelong[i] = minIdx;
         }
+        iterCount++;
         // k-means++ ensures all the clusters has any feature associated with them
 
         // 3. check convergence
@@ -223,7 +224,7 @@ void TemplatedKMeans<DescriptorUtil>::process(
 template <class DescriptorUtil>
 void TemplatedKMeans<DescriptorUtil>::initiateClustersKM(const size_t& _K,
         const std::vector<DescriptorConstPtr>& _Descriptors,
-        std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M) {
+        DescriptorArray& _Centers, DistanceCallback _F, MeanCallback _M) {
     // Random K seeds
     _Centers.clear();
     _Centers.reserve(_K);
@@ -236,7 +237,7 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKM(const size_t& _K,
 template <class DescriptorUtil>
 void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(const size_t& _K,
         const std::vector<DescriptorConstPtr>& _Descriptors,
-        std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M) {
+        DescriptorArray& _Centers, DistanceCallback _F, MeanCallback _M) {
     // Implements k-means++ seeding algorithm
     // Algorithm:
     // 1. Choose one center uniformly at random from among the data points.
@@ -294,7 +295,7 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKMpp(const size_t& _K,
 template <class DescriptorUtil>
 void TemplatedKMeans<DescriptorUtil>::initiateClustersKM2nd(const size_t& _K,
         const std::vector<DescriptorConstPtr>& _Descriptors,
-        std::vector<Descriptor>& _Centers, DistanceCallback _F, MeanCallback _M) {
+        DescriptorArray& _Centers, DistanceCallback _F, MeanCallback _M) {
     // Implements k-meansⅡ seeding algorithm
     const auto LIMIT = static_cast<size_t>(log(_Descriptors.size()) / log(2)) * _K;
 
@@ -312,7 +313,8 @@ void TemplatedKMeans<DescriptorUtil>::initiateClustersKM2nd(const size_t& _K,
     for(size_t i = 0; i < LIMIT; i++) {
         auto idx = randomInt<size_t>(0, choices.size() - 1);
         seeds.emplace_back(std::make_shared<Descriptor>(*_Descriptors[choices[idx]]));
-        choices.erase(choices.begin() + idx);
+        choices[idx] = choices.back();
+        choices.pop_back();
     }
     std::vector<std::vector<DescriptorConstPtr>> ignored;
     TemplatedKMeans<DescriptorUtil>(_K).process(seeds, _Centers, ignored, initiateClustersKMpp, _F, _M);

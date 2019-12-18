@@ -54,8 +54,8 @@
  *
  */
 
-#ifndef __D_T_FEATURE_VECTOR__
-#define __D_T_FEATURE_VECTOR__
+#ifndef __ROCKAUTO_TDBOW_FEATURE_VECTOR_H__
+#define __ROCKAUTO_TDBOW_FEATURE_VECTOR_H__
 
 #include "BowVector.h"
 #include "traits.h"
@@ -70,7 +70,7 @@ namespace TDBoW {
  *         in multiply threads context.
  * @author smallchimney
  */
-class FeatureVector: public std::map<NodeId, std::vector<unsigned int>> {
+class FeatureVector: public std::map<NodeId, std::vector<size_t>> {
 protected:
     template <typename T>
     using trait = traits::basic_traits<T>;
@@ -97,7 +97,7 @@ public:
      * @param id node id to add or to modify
      * @param i_feature index of feature to add to the given node
      */
-    void addFeature(NodeId _ID, unsigned int _FeatureIdx);
+    void addFeature(NodeId _ID, size_t _FeatureIdx);
 
     /**
      * Sends a string versions of the feature vector through the stream
@@ -117,5 +117,5 @@ typedef FeatureVector::ConstPtr FeatureVectorConstPtr;
 
 } // namespace TDBoW
 
-#endif
+#endif  // __ROCKAUTO_TDBOW_FEATURE_VECTOR_H__
 

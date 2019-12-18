@@ -54,8 +54,8 @@
  *
  */
  
-#ifndef __D_T_TEMPLATED_DATABASE__
-#define __D_T_TEMPLATED_DATABASE__
+#ifndef __ROCKAUTO_TDBOW_TEMPLATED_DATABASE_HPP__
+#define __ROCKAUTO_TDBOW_TEMPLATED_DATABASE_HPP__
 
 #include "IndexedFile.h"
 #include "TemplatedVocabulary.hpp"
@@ -71,15 +71,9 @@ public:
     // typedef
     typedef Vocabulary VocabularyType;
     typedef std::unique_ptr<VocabularyType> VocabularyPtr;
-    typedef typename Vocabulary::LoadMode                LoadMode;
-    typedef typename Vocabulary::DescriptorUtil          DescriptorUtil;
-    typedef typename Vocabulary::DescriptorUtil          util;
-    typedef typename Vocabulary::Descriptor              Descriptor;
-    typedef typename Vocabulary::DescriptorPtr           DescriptorPtr;
-    typedef typename Vocabulary::DescriptorConstPtr      DescriptorConstPtr;
-    typedef typename Vocabulary::DescriptorArray         DescriptorArray;
-    typedef typename Vocabulary::DescriptorArrayPtr      DescriptorArrayPtr;
-    typedef typename Vocabulary::DescriptorArrayConstPtr DescriptorArrayConstPtr;
+    typedef typename Vocabulary::LoadMode LoadMode;
+    typedef typename Vocabulary::util util;
+    TDBOW_DESCRIPTOR_DEF(util)
 
     // Constructor
 
@@ -95,7 +89,7 @@ public:
      */
     explicit TemplatedDatabase(
             bool _UseDirectIdx = true, unsigned _DirectIdxLevel = 0,
-            VocabularyPtr& _Vocab = nullptr);
+            VocabularyPtr&& _Vocab = nullptr);
 
     /**
      * @brief Copy constructor is deleted.
@@ -146,7 +140,7 @@ public:
      *                       indexes is returned.
      * @return                ID of the new added entry
      */
-    EntryId add(const std::vector<Descriptor>& _Features,
+    EntryId add(const DescriptorArray& _Features,
                 const BowVectorPtr& _BowVec = nullptr,
                 const FeatureVectorPtr& _FeatVec = nullptr) noexcept(false);
 
@@ -160,7 +154,7 @@ public:
      *                       indexes is returned.
      * @return                ID of the new added entry
      */
-    EntryId add(const DescriptorArray& _Features,
+    EntryId add(const Descriptors& _Features,
                 const BowVectorPtr& _BowVec = nullptr,
                 const FeatureVectorPtr& _FeatVec = nullptr) noexcept(false);
 
@@ -184,9 +178,9 @@ public:
      * @param  _MaxId         Entry ID selected limit, {@code 0} stands no limit.
      * @return                Selected and sorted entries results with scores.
      */
-    QueryResults query(const std::vector<Descriptor>& _Features,
+    QueryResults query(const DescriptorArray& _Features,
                const BowVectorPtr& _BowVec = nullptr, unsigned _MaxResults = 1,
-               unsigned _MinCommon = 5, EntryId _MaxId = 0) const;
+               unsigned _MinCommon = 5, EntryId _MaxId = 0) const noexcept(false);
 
     /**
     * @brief  Queries the database with some features
@@ -198,9 +192,9 @@ public:
     * @param  _MaxId         Entry ID selected limit, {@code 0} stands no limit.
     * @return                Selected and sorted entries results with scores.
     */
-    QueryResults query(const DescriptorArray& _Features,
+    QueryResults query(const Descriptors& _Features,
                        const BowVectorPtr& _BowVec = nullptr, unsigned _MaxResults = 1,
-                       unsigned _MinCommon = 5, EntryId _MaxId = 0) const;
+                       unsigned _MinCommon = 5, EntryId _MaxId = 0) const noexcept(false);
 
     /**
      * @breif  Queries the database with a vector
@@ -213,18 +207,7 @@ public:
      * @return                Selected and sorted entries results with scores.
      */
     QueryResults query(const BowVector& _Vec, unsigned _MaxResults = 1,
-                       unsigned _MinCommon = 5, EntryId _MaxId = 0) const;
-
-    /**
-     * @brief  Allocates some memory for the direct indexes, will throw
-     *         {@code std::runtime_error} when the set USE_DI_OFF.
-     *         The invert indices is stored in {@code std::list} structure,
-     *         so it don't need and cannot to pre-allocate the memory.
-     * @author smallchimney
-     * @param  _Size  The minimal number of entries of the allocates memory.
-     *                value less than current capacity will be ignored.
-     */
-    void reserve(size_t _Size) noexcept(false);
+                       unsigned _MinCommon = 5, EntryId _MaxId = 0) const noexcept(false);
 
     /**
      * Empties the database
@@ -237,10 +220,25 @@ public:
         m_ulNumEntries = 0;
     }
 
+    /**
+     * Stops those words whose weight is below minWeight.
+     * Words are stopped by setting their weight to 0. There are not returned
+     * later when transforming image features into vectors.
+     * Note that when using IDF or TF_IDF, the weight is the idf part, which
+     * is equivalent to -log(f), where f is the frequency of the word
+     * (f = Ni/N, Ni: number of training images where the word is present,
+     * N: number of training images).
+     * @return number of words stopped now
+     */
+    virtual size_t stopWords(WordValue _MinLimit) {
+        return m_pVocab -> stopWords(_MinLimit);
+    }
+
     // Get methods
 
     /**
      * @breif  Whether the database is ready.
+     * @author smallchimney
      * @return {@code true} after the vocabulary is ready
      */
     virtual bool ready() const noexcept {
@@ -248,8 +246,8 @@ public:
     }
 
     /**
-     * @breif  Returns the number of entries in the direct index file
-     * @return number of words
+     * @breif  Returns the number of entries in the database
+     * @return number of entries
      */
     virtual size_t size() const noexcept {
         return m_ulNumEntries;
@@ -265,7 +263,7 @@ public:
     }
 
     /**
-     * @breif  Returns whether the direct index is empty.
+     * @breif  Returns whether the database is empty.
      * @return {@code true} before any valid query.
      */
     virtual bool empty() const noexcept {
@@ -279,7 +277,7 @@ public:
      *   the given entry
      */
     const FeatureVector& retrieveFeatures(const EntryId _ID) const noexcept(false) {
-        if(m_bUseDI) {
+        if(!m_bUseDI) {
             throw std::runtime_error(TDBOW_LOG("Direct index file not built."));
         }
         // Confirm the parameters, be careful when change the structure of database.
@@ -310,7 +308,10 @@ public:
      * @author smallchimney
      * @return Vocabulary reference.
      */
-    const Vocabulary& getVocabulary() const {
+    const Vocabulary& getVocabulary() const noexcept(false) {
+        if(!ready()) {
+            throw std::runtime_error(TDBOW_LOG("vocabulary is not ready yet."));
+        }
         return *m_pVocab;
     }
 
@@ -403,10 +404,10 @@ protected:
 template <class Vocabulary>
 TemplatedDatabase<Vocabulary>::TemplatedDatabase(
         const bool _UseDirectIdx, const unsigned _DirectIdxLevel,
-        VocabularyPtr& _Vocab)
+        VocabularyPtr&& _Vocab)
         : m_pVocab(nullptr), m_bUseDI(_UseDirectIdx),
         m_uiDILevel(_DirectIdxLevel), m_ulNumEntries(0) {
-    setVocabulary(std::move(_Vocab));
+    setVocabulary(std::forward<VocabularyPtr>(_Vocab));
 }
 
 template <class Vocabulary>
@@ -440,8 +441,11 @@ TemplatedDatabase<Vocabulary>::TemplatedDatabase(const char* _Filename,
 
 template <class Vocabulary>
 EntryId TemplatedDatabase<Vocabulary>::add(
-        const std::vector<Descriptor>& _Features,
+        const DescriptorArray& _Features,
         const BowVectorPtr& _BowVec, const FeatureVectorPtr& _FeatVec) noexcept(false) {
+    if(!ready()) {
+        throw std::runtime_error(TDBOW_LOG("vocabulary is not ready yet."));
+    }
     if(_Features.empty()) {
         throw std::runtime_error("Try to add empty image.");
     }
@@ -458,8 +462,11 @@ EntryId TemplatedDatabase<Vocabulary>::add(
 
 template <class Vocabulary>
 EntryId TemplatedDatabase<Vocabulary>::add(
-        const DescriptorArray& _Features,
+        const Descriptors& _Features,
         const BowVectorPtr& _BowVec, const FeatureVectorPtr& _FeatVec) noexcept(false) {
+    if(!ready()) {
+        throw std::runtime_error(TDBOW_LOG("vocabulary is not ready yet."));
+    }
     if(_Features.rows() == 0) {
         throw std::runtime_error("Try to add empty image.");
     }
@@ -477,6 +484,9 @@ EntryId TemplatedDatabase<Vocabulary>::add(
 template <class Vocabulary>
 EntryId TemplatedDatabase<Vocabulary>::add(
         const BowVector& _BowVec, const FeatureVectorConstPtr& _FeatVec) noexcept(false) {
+    if(!ready()) {
+        throw std::runtime_error(TDBOW_LOG("vocabulary is not ready yet."));
+    }
     auto entryID = static_cast<EntryId>(m_ulNumEntries++);
     // Update direct index file
     if(m_bUseDI) {
@@ -489,17 +499,24 @@ EntryId TemplatedDatabase<Vocabulary>::add(
     }
     // Update inverted index file
     for(const auto& word : _BowVec) {
-        auto& row = m_aIFile[word.first];
-        row.emplace_back(entryID, word.second);
+        // Only valid word will be added, so speed up the calculation
+        // NOTE: Be careful when stop word in a lower level later.
+        if(m_pVocab -> getWordWeight(word.first)) {
+            auto& row = m_aIFile[word.first];
+            row.emplace_back(entryID, word.second);
+        }
     }
     return entryID;
 }
 
 template <class Vocabulary>
 QueryResults TemplatedDatabase<Vocabulary>::query(
-        const std::vector<Descriptor>& _Features,
+        const DescriptorArray& _Features,
         const BowVectorPtr& _BowVec, const unsigned _MaxResults,
-        const unsigned _MinCommon, EntryId _MaxId) const {
+        const unsigned _MinCommon, EntryId _MaxId) const noexcept(false) {
+    if(!ready()) {
+        throw std::runtime_error(TDBOW_LOG("vocabulary is not ready yet."));
+    }
     // BoW vector result is required, because it will be used when query
     BowVector vec;
     auto& bowRet = _BowVec ? *_BowVec : vec;
@@ -509,9 +526,12 @@ QueryResults TemplatedDatabase<Vocabulary>::query(
 
 template <class Vocabulary>
 QueryResults TemplatedDatabase<Vocabulary>::query(
-        const DescriptorArray& _Features,
+        const Descriptors& _Features,
         const BowVectorPtr& _BowVec, const unsigned _MaxResults,
-        const unsigned _MinCommon, EntryId _MaxId) const {
+        const unsigned _MinCommon, EntryId _MaxId) const noexcept(false) {
+    if(!ready()) {
+        throw std::runtime_error(TDBOW_LOG("vocabulary is not ready yet."));
+    }
     // BoW vector result is required, because it will be used when query
     BowVector vec;
     auto& bowRet = _BowVec ? *_BowVec : vec;
@@ -522,21 +542,12 @@ QueryResults TemplatedDatabase<Vocabulary>::query(
 template <class Vocabulary>
 QueryResults TemplatedDatabase<Vocabulary>::query(
         const BowVector& _Vec, const unsigned _MaxResults,
-        const unsigned _MinCommon, EntryId _MaxId) const {
+        const unsigned _MinCommon, EntryId _MaxId) const noexcept(false) {
+    if(!ready()) {
+        throw std::runtime_error(TDBOW_LOG("vocabulary is not ready yet."));
+    }
     return m_pVocab -> getScoringObj().score(
             _Vec, m_aIFile, _MaxResults, _MinCommon, _MaxId);
-}
-
-template <class Vocabulary>
-void TemplatedDatabase<Vocabulary>::reserve(const size_t _Size) {
-    if(!m_bUseDI) {
-        m_aDFile.clear();
-        m_aDFile.shrink_to_fit();
-        throw std::runtime_error("Current setting is \"USE_DI_OFF\", "
-                                 "so the memory allocate is redundant.");
-    }
-    // Allocate for direct index file
-    m_aDFile.reserve(_Size);
 }
 
 /* ********************************************************************************
@@ -563,7 +574,7 @@ template <class Vocabulary>
 TemplatedDatabase<Vocabulary>&
 TemplatedDatabase<Vocabulary>::setVocabulary(VocabularyPtr&& _Vocab) noexcept {
     if(_Vocab != m_pVocab) {
-        m_pVocab = std::move(_Vocab);
+        m_pVocab = std::forward<VocabularyPtr>(_Vocab);
     }
     clear();
     return *this;
@@ -575,7 +586,7 @@ TemplatedDatabase<Vocabulary>::setVocabulary(VocabularyPtr&& _Vocab,
         const bool _UseDI, const unsigned _DILevel) noexcept {
     clear();
     updateParam(_UseDI, _DILevel);
-    return setVocabulary(std::forward(_Vocab));
+    return setVocabulary(std::forward<VocabularyPtr>(_Vocab));
 }
 
 /* ********************************************************************************
@@ -595,7 +606,7 @@ template <class Vocabulary>
 void TemplatedDatabase<Vocabulary>::load(
         const std::string& _Filename, LoadMode _Mode) noexcept(false) {
     clear();
-    m_pVocab.reset(new Vocabulary(_Filename, _Mode));
+    m_pVocab = VocabularyPtr(new Vocabulary(_Filename, _Mode));
 }
 
 template <class Vocabulary>
@@ -611,4 +622,4 @@ std::ostream& operator<<(std::ostream& _Out, const TemplatedDatabase<Vocabulary>
 } // namespace TDBoW
 
 
-#endif
+#endif  // __ROCKAUTO_TDBOW_TEMPLATED_DATABASE_HPP__

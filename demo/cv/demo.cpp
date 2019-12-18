@@ -35,13 +35,13 @@ using std::cout; using std::endl;
 typedef TDBoW::Orb256Vocabulary Vocabulary;
 typedef TDBoW::Orb256Database Database;
 typedef Vocabulary::ConstDataSet ConstDataSet;
-typedef std::vector<Vocabulary::DescriptorArray> DescriptorsSet;
+typedef Vocabulary::DescriptorsArray DescriptorsArray;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-DescriptorsSet loadFeatures();
-void testVocabCreation(const ConstDataSet& _DataSet, const DescriptorsSet& _Features);
-void testDatabase(const DescriptorsSet& _Features);
+DescriptorsArray loadFeatures();
+void testVocabCreation(const ConstDataSet& _DataSet, const DescriptorsArray& _Features);
+void testDatabase(const DescriptorsArray& _Features);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -60,7 +60,7 @@ void wait() {
 int main() {
     // Load files, calculate ORB descriptors and do transform
     // DescriptorArray and Descriptor are recommended types when query
-    DescriptorsSet features = loadFeatures();
+    auto features = loadFeatures();
 
     // In this simple case, we had not prepare too many data, so we
     // use the same data for both create and query.
@@ -81,10 +81,10 @@ int main() {
 
 // ----------------------------------------------------------------------------
 
-std::vector<Vocabulary::DescriptorArray> loadFeatures() {
+DescriptorsArray loadFeatures() {
     cv::Ptr<cv::ORB> orb = cv::ORB::create();
     cout << "Extracting ORB features..." << endl;
-    DescriptorsSet features(IMAGES_NUM);
+    DescriptorsArray features(IMAGES_NUM);
     std::stringstream ss;
     for(size_t i = 0; i < IMAGES_NUM; ++i) {
         ss << PKG_DIR << "/demo/cv/images/image" << i << ".png";
@@ -105,7 +105,7 @@ std::vector<Vocabulary::DescriptorArray> loadFeatures() {
 
 // ----------------------------------------------------------------------------
 
-void testVocabCreation(const ConstDataSet& _DataSet, const DescriptorsSet& _Features) {
+void testVocabCreation(const ConstDataSet& _DataSet, const DescriptorsArray& _Features) {
     using namespace TDBoW;
     // branching factor and depth levels
     const int k = 9;
@@ -155,7 +155,7 @@ void testVocabCreation(const ConstDataSet& _DataSet, const DescriptorsSet& _Feat
 
 // ----------------------------------------------------------------------------
 
-void testDatabase(const DescriptorsSet& _Features) {
+void testDatabase(const DescriptorsArray& _Features) {
     cout << "Creating a small database..." << endl;
     // load the vocabulary from disk
     Database db("small_voc.bin.qp", false); // false = do not use direct index

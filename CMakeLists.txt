@@ -1,20 +1,20 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.12)
 project(tdbow)
 
 ####################
 ## Option setting ##
 ####################
 
-option(BUILD_PC_Demo "Build PC demo"     ON)
-option(BUILD_CV_Demo "Build CV demo"     ON)
-option(ABSOLUTE_LOG  "Log absolute path" ON)
+option(BUILD_TDBOW_PC_Demo "Build PC demo" ON)
+option(BUILD_TDBOW_CV_Demo "Build CV demo" ON)
+option(ABSOLUTE_LOG    "Log absolute path" ON)
 
 if(NOT ABSOLUTE_LOG)
   add_definitions(-DTDBOW_RELATIVE_LOG)
 endif()
 
 ## Compile as C++11
-add_compile_options(-std=c++11)
+set(CMAKE_CXX_STANDARD 11)
 add_definitions(-DPKG_DIR="${CMAKE_CURRENT_LIST_DIR}")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -37,8 +37,6 @@ endif()
 #SET(CMAKE_CXX_FLAGS "-O0 -g ${CMAKE_CXX_FLAGS}")
 ## comment below when develop new utility or framework
 SET(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
-
-add_definitions(-DPKG_DIR="${CMAKE_CURRENT_LIST_DIR}")
 
 ###################
 ## find packages ##
@@ -88,9 +86,13 @@ catkin_package(
     LIBRARIES ${PROJECT_NAME}
 )
 
+link_libraries(
+    ${catkin_LIBRARIES}
+)
+
 ## Setting TDBoW context
 set(TDBoW_INC include/TDBoW)
-set(TDBoW_LIB pthread yaml-cpp)
+set(TDBoW_LIB pthread)
 file(GLOB_RECURSE TDBoW_HDRS
         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
         ${TDBoW_INC}/*.h
@@ -101,24 +103,32 @@ file(GLOB_RECURSE TDBoW_SRCS
         src/*.cc
         src/*.cpp)
 
-set(DEPENDENCY_DIR ${CMAKE_CURRENT_BINARY_DIR}/dependencies)
-set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
-
 set(LIB_SHARED "SHARED")
 if(WIN32)
   set(LIB_SHARED "STATIC")
 endif(WIN32)
 add_library(${PROJECT_NAME} ${LIB_SHARED} ${TDBoW_SRCS} ${EXTRA_SRCS})
-include_directories(include ${EXTRA_INCS})
+include_directories(include ${EXTRA_INCS} ${catkin_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${TDBoW_LIB} ${EXTRA_LIBS})
 
-if(BUILD_CV_Demo)
+if(BUILD_TDBOW_CV_Demo)
+  ## Setting context
+  set(EXEC_NAME cv_demo)
+  set(EXEC_TARGET_NAME ${PROJECT_NAME}-${EXEC_NAME}-exec)
+  ## OpenCV required
   find_package(OpenCV REQUIRED)
-  add_executable(cv_demo demo/cv/demo.cpp)
-  target_link_libraries(cv_demo ${PROJECT_NAME} ${OpenCV_LIBS})
+  ## Build target
+  add_executable(${EXEC_TARGET_NAME} demo/cv/demo.cpp)
+  target_link_libraries(${EXEC_TARGET_NAME} ${PROJECT_NAME} ${OpenCV_LIBS})
+  set_target_properties(${EXEC_TARGET_NAME} PROPERTIES
+          OUTPUT_NAME ${EXEC_NAME})
 endif()
 
-if(BUILD_PC_Demo)
+if(BUILD_TDBOW_PC_Demo)
+  ## Setting context
+  set(EXEC_NAME pc_demo)
+  set(EXEC_TARGET_NAME ${PROJECT_NAME}-${EXEC_NAME}-exec)
+  ## PCL required && OpenMP optional
   find_package(OpenMP QUIET)
   if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -128,9 +138,12 @@ if(BUILD_PC_Demo)
   endif()
   find_package(PCL 1.7.2 REQUIRED COMPONENTS common io keypoints features)
   add_definitions(${PCL_DEFINITIONS})
-  add_executable(pc_demo demo/pc/demo.cpp)
-  target_include_directories(pc_demo PRIVATE ${PCL_INCLUDE_DIRS})
-  target_link_libraries(pc_demo ${PROJECT_NAME} ${PCL_LIBRARIES})
+  ## Build target
+  add_executable(${EXEC_TARGET_NAME} demo/pc/demo.cpp)
+  target_include_directories(${EXEC_TARGET_NAME} PRIVATE ${PCL_INCLUDE_DIRS})
+  target_link_libraries(${EXEC_TARGET_NAME} ${PROJECT_NAME} ${PCL_LIBRARIES})
+  set_target_properties(${EXEC_TARGET_NAME} PROPERTIES
+          OUTPUT_NAME ${EXEC_NAME})
 endif()
 
 #############

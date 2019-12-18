@@ -43,13 +43,13 @@ FeatureVector::FeatureVector(const FeatureVector& _Obj) : m_bLocked(false) {
 
 // ---------------------------------------------------------------------------
 
-void FeatureVector::addFeature(NodeId _ID, unsigned int _FeatureIdx) {
+void FeatureVector::addFeature(NodeId _ID, size_t _FeatureIdx) {
     SpinLock locker(m_bLocked);
     auto iter = lower_bound(_ID);
     if(iter != end() && iter -> first == _ID) {
         iter -> second.emplace_back(_FeatureIdx);
     } else {
-        iter = insert(iter, value_type(_ID, std::vector<unsigned>()));
+        iter = insert(iter, value_type(_ID, std::vector<size_t>()));
         iter -> second.emplace_back(_FeatureIdx);
     }
 }
@@ -85,4 +85,4 @@ std::ostream& operator <<(std::ostream& _Out, const FeatureVector& _Vec) {
 
 // ---------------------------------------------------------------------------
 
-} // namespace DBoW2
+} // namespace TDBoW

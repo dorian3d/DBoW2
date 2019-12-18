@@ -19,10 +19,10 @@
    * Author Email  : smallchimney@foxmail.com
    * Created Time  : 2019-11-22 22:22:49
    * Last Modified : smallchimney
-   * Modified Time : 2019-12-02 17:13:40
+   * Modified Time : 2019-12-13 13:41:32
 ************************************************************************* */
-#ifndef __ROCKAUTO_TRAITS_H__
-#define __ROCKAUTO_TRAITS_H__
+#ifndef __ROCKAUTO_TDBOW_TRAITS_H__
+#define __ROCKAUTO_TDBOW_TRAITS_H__
 
 #include <string>
 #include <memory>
@@ -92,4 +92,4 @@ __TYPE_TRAITS(double  , "double"                , 10);
 
 }}  // namespace TDBow::traits
 
-#endif //__ROCKAUTO_TRAITS_H__
+#endif //__ROCKAUTO_TDBOW_TRAITS_H__

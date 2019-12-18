@@ -46,6 +46,23 @@ BowVector::BowVector(const BowVector& _Obj) : m_bLocked(false) {
     _Obj.m_bLocked = false;
 }
 
+BowVector& BowVector::operator =(const BowVector& _Obj) {
+    if(_Obj.m_bLocked) {
+        while(true) {
+            bool excepted = false;
+            if(_Obj.m_bLocked.compare_exchange_strong(excepted, true)) {
+                break;
+            }
+        }
+    }
+    SpinLock locker(m_bLocked);
+    for(const auto& pair : _Obj) {
+        insert(end(), pair);
+    }
+    _Obj.m_bLocked = false;
+    return *this;
+}
+
 // --------------------------------------------------------------------------
 
 void BowVector::addWeight(const WordId _ID, const WordValue _Val) {

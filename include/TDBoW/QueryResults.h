@@ -54,8 +54,8 @@
  *
  */
 
-#ifndef __D_T_QUERY_RESULTS__
-#define __D_T_QUERY_RESULTS__
+#ifndef __ROCKAUTO_TDBOW_QUERY_RESULTS__
+#define __ROCKAUTO_TDBOW_QUERY_RESULTS__
 
 #include "BowVector.h"
 

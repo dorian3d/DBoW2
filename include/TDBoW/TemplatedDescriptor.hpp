@@ -51,10 +51,10 @@
    * Author Email  : smallchimney@foxmail.com
    * Created Time  : 2019-11-20 10:37:21
    * Last Modified : smallchimney
-   * Modified Time : 2019-12-06 10:58:21
+   * Modified Time : 2019-12-15 19:16:42
 ************************************************************************* */
-#ifndef __ROCKAUTO_DESCRIPTOR_HPP__
-#define __ROCKAUTO_DESCRIPTOR_HPP__
+#ifndef __ROCKAUTO_TDBOW_TEMPLATED_DESCRIPTOR_HPP__
+#define __ROCKAUTO_TDBOW_TEMPLATED_DESCRIPTOR_HPP__
 
 #include <iostream>
 #include <vector>
@@ -67,9 +67,12 @@ namespace TDBoW {
 
 // local methods
 #define TDBOW_LOG(args)\
-    ::TDBoW::__tdbow_line_str(__FILE__, __LINE__, ::std::stringstream() << args)
-template <typename T>
-static std::string __tdbow_line_str(const std::string&, const size_t&, std::basic_ostream<T>&);
+    ::TDBoW::internal::__tdbow_line_str(__FILE__, __LINE__, ::std::stringstream() << args)
+
+namespace internal {
+    template <typename T>
+    static std::string __tdbow_line_str(const std::string&, const size_t&, std::basic_ostream<T>&);
+}
 
 std::string toHex(const uint8_t& _Data) noexcept;
 uint8_t fromHex(const std::string& _Str) noexcept(false);
@@ -80,28 +83,35 @@ class TemplatedDescriptorUtil {
 protected:
     static_assert(L != 0, "The parameter L cannot be zero!");
 
-    template <typename T>
-    using trait = traits::basic_traits<T>;
-
     template <typename Scalar, int Rows = 1>
     using Matrix = Eigen::Matrix<Scalar, Rows, L, Eigen::RowMajor>;
 
 public:
-    typedef Matrix<TScalar>                            Descriptor;
-    typedef typename trait<Descriptor>::Ptr            DescriptorPtr;
-    typedef typename trait<Descriptor>::ConstPtr       DescriptorConstPtr;
+    static constexpr size_t DescL = L;
 
-    typedef Matrix<TScalar, Eigen::Dynamic>            DescriptorArray;
-    typedef typename trait<DescriptorArray>::Ptr       DescriptorArrayPtr;
-    typedef typename trait<DescriptorArray>::ConstPtr  DescriptorArrayConstPtr;
+#define __DECAY(...) __VA_ARGS__
+#define __TDBOW_PTR_DEF(Original, Type) \
+    typedef Original Type;\
+    typedef typename traits::basic_traits<Type>::Ptr      Type##Ptr;\
+    typedef typename traits::basic_traits<Type>::ConstPtr Type##ConstPtr;
 
-    typedef Matrix<uint8_t>                            BinaryDescriptor;
-    typedef typename trait<BinaryDescriptor>::Ptr      BinaryDescriptorPtr;
-    typedef typename trait<BinaryDescriptor>::ConstPtr BinaryDescriptorConstPtr;
+    __TDBOW_PTR_DEF(Matrix<TScalar>,                          Descriptor)
+    __TDBOW_PTR_DEF(__DECAY(Matrix<TScalar, Eigen::Dynamic>), Descriptors)
+    __TDBOW_PTR_DEF(__DECAY(std::vector<Descriptor,
+            Eigen::aligned_allocator<Descriptor>>),           DescriptorArray)
+    __TDBOW_PTR_DEF(__DECAY(std::vector<Descriptors,
+            Eigen::aligned_allocator<Descriptors>>),          DescriptorsArray)
+    __TDBOW_PTR_DEF(__DECAY(std::vector<DescriptorArray>),    DescriptorsSet)
+    __TDBOW_PTR_DEF(Matrix<uint8_t>,                          BinaryDescriptor)
+    __TDBOW_PTR_DEF(__DECAY(Matrix<uint8_t, Eigen::Dynamic>), BinaryDescriptors)
+    __TDBOW_PTR_DEF(__DECAY(std::vector<BinaryDescriptor,
+            Eigen::aligned_allocator<BinaryDescriptor>>),     BinaryDescriptorArray)
+    __TDBOW_PTR_DEF(__DECAY(std::vector<BinaryDescriptors,
+            Eigen::aligned_allocator<BinaryDescriptors>>),    BinaryDescriptorsArray)
+    __TDBOW_PTR_DEF(std::vector<BinaryDescriptorArray>,       BinaryDescriptorsSet)
 
-    typedef Matrix<uint8_t, Eigen::Dynamic>            BinaryDescriptorArray;
-    typedef typename trait<BinaryDescriptor>::Ptr      BinaryDescriptorArrayPtr;
-    typedef typename trait<BinaryDescriptor>::ConstPtr BinaryDescriptorArrayConstPtr;
+#undef __TDBOW_PTR_DEF
+#undef __DECAY
 
     typedef double_t distance_type;
     typedef std::function<Descriptor(
@@ -121,7 +131,7 @@ public:
      * @param  _Input  The original dataset, will be cleared after process.
      * @return         The dataset can be shared
      */
-    static DataSet make_shared(std::vector<std::vector<Descriptor>>& _Input) {
+    static DataSet make_shared(DescriptorsSet& _Input) {
         DataSet ret(0);
         return make_shared(_Input, ret);
     }
@@ -132,7 +142,7 @@ public:
      * @param  _Input  The original dataset, will be cleared after process.
      * @return         The dataset can be shared
      */
-    static DataSet make_shared(std::vector<DescriptorArray>& _Input) {
+    static DataSet make_shared(DescriptorsArray& _Input) {
         DataSet ret(0);
         return make_shared(_Input, ret);
     }
@@ -144,7 +154,7 @@ public:
      * @param  _Output The dataset can be shared
      * @return _Output
      */
-    static DataSet& make_shared(std::vector<std::vector<Descriptor>>& _Input, DataSet& _Output);
+    static DataSet& make_shared(DescriptorsSet& _Input, DataSet& _Output);
 
     /**
      * @breif  Make shared of the original dataset
@@ -153,7 +163,7 @@ public:
      * @param  _Output The dataset can be shared
      * @return _Output
      */
-    static DataSet& make_shared(std::vector<DescriptorArray>& _Input, DataSet& _Output);
+    static DataSet& make_shared(DescriptorsArray& _Input, DataSet& _Output);
 
     /**
      * @breif  make vector<vector<Ptr>> to vector<vector<const Ptr>>
@@ -170,7 +180,7 @@ public:
      * @param  _Output The dataset can be shared
      * @return _Output
      */
-    static ConstDataSet make_const(std::vector<std::vector<Descriptor>>& _Input) {
+    static ConstDataSet make_const(DescriptorsSet& _Input) {
         return make_const(make_shared(_Input));
     }
 
@@ -180,13 +190,11 @@ public:
      * @param  _Input  The original dataset, will be cleared after process.
      * @return         The dataset can be shared
      */
-    static ConstDataSet make_const(std::vector<DescriptorArray>& _Input) {
+    static ConstDataSet make_const(DescriptorsArray& _Input) {
         return make_const(make_shared(_Input));
     }
 
     // Descriptor mean value and distance
-
-#define TYPE_EQ(T1, T2) traits::type_traits<T1>::id() == traits::type_traits<T2>::id()
 
     static Descriptor _meanValue(
             const std::vector<DescriptorConstPtr>& _Descriptors,
@@ -198,11 +206,11 @@ public:
     }
 
     static Descriptor meanValue(const std::vector<DescriptorConstPtr>& _Descriptors) noexcept(false) {
-        if(TYPE_EQ(TScalar, uint8_t)) {
+        if(std::is_same<TScalar, uint8_t>()) {
             return _meanValue(_Descriptors, binaryMean);
-        } else if(TYPE_EQ(TScalar, float_t)) {
+        } else if(std::is_same<TScalar, float_t>()) {
             return _meanValue(_Descriptors, valueMean);
-        } else if(TYPE_EQ(TScalar, double_t)) {
+        } else if(std::is_same<TScalar, double_t>()) {
             return _meanValue(_Descriptors, valueMean);
         } else {
             throw std::runtime_error(TDBOW_LOG("The scalar type is not support automatically, "
@@ -217,19 +225,17 @@ public:
     }
 
     static distance_type distance(const Descriptor& _A, const Descriptor& _B) noexcept(false) {
-        if(TYPE_EQ(TScalar, uint8_t)) {
+        if(std::is_same<TScalar, uint8_t>()) {
             return _distance(_A, _B, binaryDistance);
-        } else if(TYPE_EQ(TScalar, float_t)) {
+        } else if(std::is_same<TScalar, float_t>()) {
             return _distance(_A, _B, valueDistance);
-        } else if(TYPE_EQ(TScalar, double_t)) {
+        } else if(std::is_same<TScalar, double_t>()) {
             return _distance(_A, _B, valueDistance);
         } else {
             throw std::runtime_error(TDBOW_LOG("The scalar type is not support automatically, "
                                      "a processing function must be explicitly specified."));
         }
     }
-
-#undef TYPE_EQ
 
     template <typename Matrix>
     static void toBinary(const Matrix& _Mat, std::ostream& _Out);
@@ -245,7 +251,7 @@ public:
             const BinaryDescriptor& _Descriptor);
 
     static std::ostream& visualBinary(std::ostream& _Out,
-            const BinaryDescriptorArray& _Descriptor);
+            const BinaryDescriptors& _Descriptor);
 
 protected:
     static Descriptor binaryMean(const std::vector<DescriptorConstPtr>& _Descriptors);
@@ -256,11 +262,10 @@ protected:
 
 };
 
-
 template <typename TScalar, size_t DescL>
 typename TemplatedDescriptorUtil<TScalar, DescL>::DataSet&
 TemplatedDescriptorUtil<TScalar, DescL>::make_shared(
-        std::vector<std::vector<Descriptor>>& _Input, DataSet& _Output) {
+        DescriptorsSet& _Input, DataSet& _Output) {
     if(_Input.empty()) {
         throw std::runtime_error(TDBOW_LOG("Empty dataset."));
     }
@@ -284,7 +289,7 @@ TemplatedDescriptorUtil<TScalar, DescL>::make_shared(
 template <typename TScalar, size_t DescL>
 typename TemplatedDescriptorUtil<TScalar, DescL>::DataSet&
 TemplatedDescriptorUtil<TScalar, DescL>::make_shared(
-        std::vector<DescriptorArray>& _Input, DataSet& _Output) {
+        DescriptorsArray& _Input, DataSet& _Output) {
     if(_Input.empty()) {
         throw std::runtime_error(TDBOW_LOG("Empty dataset."));
     }
@@ -300,7 +305,7 @@ TemplatedDescriptorUtil<TScalar, DescL>::make_shared(
         // todo: make a memory pool, and execute methods like `memcpy()`, or even reuse the original memory
         for(typename Descriptor::Index i = 0; i < rows; i++) {
             output.emplace_back(std::make_shared<Descriptor>());
-            DescriptorArray::Map(output.back() -> data(), 1, DescL) = image.row(i);
+            Descriptors::Map(output.back() -> data(), 1, DescL) = image.row(i);
         }
         _Input.pop_back();
     }
@@ -497,7 +502,7 @@ std::ostream& TemplatedDescriptorUtil<TScalar, L>::visualBinary(
 
 template<typename TScalar, size_t L>
 std::ostream& TemplatedDescriptorUtil<TScalar, L>::visualBinary(
-        std::ostream& _Out, const BinaryDescriptorArray& _Descriptor) {
+        std::ostream& _Out, const BinaryDescriptors& _Descriptor) {
     auto* p = _Descriptor.data();
     _Out << '<';
     auto rows = static_cast<size_t>(_Descriptor.rows());
@@ -607,26 +612,66 @@ boost::filesystem::path relativeTo(
 #endif
 #endif
 
-template <typename T>
-std::string __tdbow_line_str(const std::string& _File, const size_t& _Line, std::basic_ostream<T>& _Content) {
-    boost::filesystem::path file(_File);
-    static std::stringstream ss;
-    ss.clear();
-    ss.str("");
+namespace internal {
+    template<typename T>
+    std::string __tdbow_line_str(const std::string &_File,
+            const size_t &_Line, std::basic_ostream<T> &_Content) {
+        boost::filesystem::path file(_File);
+        static std::stringstream ss;
+        ss.clear();
+        ss.str("");
 #ifdef TDBOW_RELATIVE_LOG
-    static const boost::filesystem::path ROOT(PKG_DIR);
+        static const boost::filesystem::path ROOT(PKG_DIR);
 #ifndef FOUND_BOOST_1_60
-    const auto relPath = relativeTo(ROOT, file);
+        const auto relPath = relativeTo(ROOT, file);
 #else
-    const auto relPath = boost::filesystem::relative(file, ROOT);
+        const auto relPath = boost::filesystem::relative(file, ROOT);
 #endif
-    ss << relPath.native() << ':' << _Line << ": " << _Content << std::endl;
+        ss << relPath.native() << ':' << _Line << ": " << _Content << std::endl;
 #else
-    ss << file.native() << ':' << _Line << ": " << _Content.rdbuf() << std::endl;
+        ss << file.native() << ':' << _Line << ":" << std::endl << "\t\t" << _Content.rdbuf() << std::endl;
 #endif
-    return ss.str();
-}
+        return ss.str();
+    }
+}   // namespace internal
+
+/**
+ * @brief typedef for others class
+ */
+#define TDBOW_DESCRIPTOR_DEF(Util) \
+    typedef typename Util :: Descriptor               Descriptor;\
+    typedef typename Util :: DescriptorPtr            DescriptorPtr;\
+    typedef typename Util :: DescriptorConstPtr       DescriptorConstPtr;\
+    typedef typename Util :: Descriptors              Descriptors;\
+    typedef typename Util :: DescriptorsPtr           DescriptorsPtr;\
+    typedef typename Util :: DescriptorsConstPtr      DescriptorsConstPtr;\
+    typedef typename Util :: DescriptorArray          DescriptorArray;\
+    typedef typename Util :: DescriptorArrayPtr       DescriptorArrayPtr;\
+    typedef typename Util :: DescriptorArrayConstPtr  DescriptorArrayConstPtr;\
+    typedef typename Util :: DescriptorsArray         DescriptorsArray;\
+    typedef typename Util :: DescriptorsArrayPtr      DescriptorsArrayPtr;\
+    typedef typename Util :: DescriptorsArrayConstPtr DescriptorsArrayConstPtr;\
+    typedef typename Util :: DescriptorsSet           DescriptorsSet;\
+    typedef typename Util :: DescriptorsSetPtr        DescriptorsSetPtr;\
+    typedef typename Util :: DescriptorsSetConstPtr   DescriptorsSetConstPtr;\
+    typedef typename Util :: BinaryDescriptor               BinaryDescriptor;\
+    typedef typename Util :: BinaryDescriptorPtr            BinaryDescriptorPtr;\
+    typedef typename Util :: BinaryDescriptorConstPtr       BinaryDescriptorConstPtr;\
+    typedef typename Util :: BinaryDescriptors              BinaryDescriptors;\
+    typedef typename Util :: BinaryDescriptorsPtr           BinaryDescriptorsPtr;\
+    typedef typename Util :: BinaryDescriptorsConstPtr      BinaryDescriptorsConstPtr;\
+    typedef typename Util :: BinaryDescriptorArray          BinaryDescriptorArray;\
+    typedef typename Util :: BinaryDescriptorArrayPtr       BinaryDescriptorArrayPtr;\
+    typedef typename Util :: BinaryDescriptorsArrayConstPtr BinaryDescriptorArrayConstPtr;\
+    typedef typename Util :: BinaryDescriptorsArray         BinaryDescriptorsArray;\
+    typedef typename Util :: BinaryDescriptorsArrayPtr      BinaryDescriptorsArrayPtr;\
+    typedef typename Util :: BinaryDescriptorsArrayConstPtr BinaryDescriptorsArrayConstPtr;\
+    typedef typename Util :: BinaryDescriptorsSet           BinaryDescriptorsSet;\
+    typedef typename Util :: BinaryDescriptorsSetPtr        BinaryDescriptorsSetPtr;\
+    typedef typename Util :: BinaryDescriptorsSetConstPtr   BinaryDescriptorsSetConstPtr;\
+    typedef typename Util :: DataSet      DataSet;\
+    typedef typename Util :: ConstDataSet ConstDataSet;
 
 }   // namespace TDBoW
 
-#endif //__ROCKAUTO_DESCRIPTOR_HPP__
+#endif //__ROCKAUTO_TDBOW_TEMPLATED_DESCRIPTOR_HPP__

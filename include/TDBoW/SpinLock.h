@@ -21,8 +21,8 @@
    * Last Modified : smallchimney
    * Modified Time : 2019-12-04 13:42:53
 ************************************************************************* */
-#ifndef __ROCKAUTO_SPIN_LOCK_H__
-#define __ROCKAUTO_SPIN_LOCK_H__
+#ifndef __ROCKAUTO_TDBOW_SPIN_LOCK_H__
+#define __ROCKAUTO_TDBOW_SPIN_LOCK_H__
 
 #include <atomic>
 
@@ -44,4 +44,4 @@ private:
 
 }
 
-#endif //__ROCKAUTO_SPIN_LOCK_H__
+#endif //__ROCKAUTO_TDBOW_SPIN_LOCK_H__

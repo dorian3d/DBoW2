@@ -52,15 +52,15 @@
  * Description: templated vocabulary 
  */
 
-#ifndef __D_T_TEMPLATED_VOCABULARY__
-#define __D_T_TEMPLATED_VOCABULARY__
+#ifndef __ROCKAUTO_TDBOW_TEMPLATED_VOCABULARY_HPP__
+#define __ROCKAUTO_TDBOW_TEMPLATED_VOCABULARY_HPP__
 
+#include <fstream>
+#include <thread>
 #include <cassert>
 #include <cstdlib>
 #include <algorithm>
 #include <queue>
-#include <boost/dynamic_bitset.hpp>
-#include <thread>
 
 #include "FeatureVector.h"
 #include "BowVector.h"
@@ -69,6 +69,7 @@
 #include "TemplatedKMeans.hpp"
 #include <quicklz.h>
 
+#include <boost/dynamic_bitset.hpp>
 #include <yaml-cpp/yaml.h>
 
 namespace TDBoW {
@@ -93,17 +94,10 @@ template <typename TScalar, size_t DescL>
 class TemplatedVocabulary {
 public:
     // typedef
-    typedef TemplatedDescriptorUtil<TScalar, DescL>          DescriptorUtil;
-    typedef DescriptorUtil                                   util;
-    typedef TemplatedKMeans<DescriptorUtil>                  KMeansUtil;
-    typedef typename DescriptorUtil::Descriptor              Descriptor;
-    typedef typename DescriptorUtil::DescriptorPtr           DescriptorPtr;
-    typedef typename DescriptorUtil::DescriptorConstPtr      DescriptorConstPtr;
-    typedef typename DescriptorUtil::DescriptorArray         DescriptorArray;
-    typedef typename DescriptorUtil::DescriptorArrayPtr      DescriptorArrayPtr;
-    typedef typename DescriptorUtil::DescriptorArrayConstPtr DescriptorArrayConstPtr;
-    typedef typename DescriptorUtil::DataSet                 DataSet;
-    typedef typename DescriptorUtil::ConstDataSet            ConstDataSet;
+    typedef TScalar ScalarType;
+    typedef TemplatedDescriptorUtil<TScalar, DescL> util;
+    typedef TemplatedKMeans<util> KMeansUtil;
+    TDBOW_DESCRIPTOR_DEF(util)
 
     /** The mode of operation when loading a vocabulary */
     enum LoadMode {AUTO, BINARY, YAML};
@@ -177,17 +171,7 @@ public:
      * @param  _Feature
      * @return word id
      */
-    virtual WordId transform(const Descriptor& _Feature) const;
-
-    /**
-     * @breif Transform a set of descriptors into a bow vector and a feature vector
-     * @param _Features
-     * @param _BowVec  (out)   Bow vector
-     * @param _FeatVec (out)   Feature vector of nodes and feature indexes
-     * @param _LevelsUp        Levels to go up the vocabulary tree to get the node index
-     */
-    void transform(const std::vector<Descriptor>& _Features, BowVector& _BowVec,
-            const FeatureVectorPtr& _FeatVec = nullptr, unsigned _LevelsUp = 0) const;
+    virtual WordId transform(const Descriptor& _Feature) const noexcept(false);
 
     /**
      * @breif Transform a set of descriptors into a bow vector and a feature vector
@@ -197,7 +181,17 @@ public:
      * @param _LevelsUp        Levels to go up the vocabulary tree to get the node index
      */
     void transform(const DescriptorArray& _Features, BowVector& _BowVec,
-            const FeatureVectorPtr& _FeatVec = nullptr, unsigned _LevelsUp = 0) const;
+            const FeatureVectorPtr& _FeatVec = nullptr, unsigned _LevelsUp = 0) const noexcept(false);
+
+    /**
+     * @breif Transform a set of descriptors into a bow vector and a feature vector
+     * @param _Features
+     * @param _BowVec  (out)   Bow vector
+     * @param _FeatVec (out)   Feature vector of nodes and feature indexes
+     * @param _LevelsUp        Levels to go up the vocabulary tree to get the node index
+     */
+    void transform(const Descriptors& _Features, BowVector& _BowVec,
+            const FeatureVectorPtr& _FeatVec = nullptr, unsigned _LevelsUp = 0) const noexcept(false);
 
     /**
      * @breif Transform a set of descriptors in a single thread
@@ -206,8 +200,8 @@ public:
      * @param _FeatVec (out)   Feature vector of nodes and feature indexes
      * @param _LevelsUp        Levels to go up the vocabulary tree to get the node index
      */
-    virtual void _transform_thread(const std::vector<Descriptor>& _Features,
-            BowVector& _BowVec, const FeatureVectorPtr& _FeatVec, unsigned _LevelsUp) const;
+    virtual void _transform_thread(const DescriptorArray& _Features,
+            BowVector& _BowVec, const FeatureVectorPtr& _FeatVec, unsigned _LevelsUp) const noexcept(false);
   
     /**
      * @breif  Returns the score of two vectors
@@ -243,6 +237,7 @@ public:
     
     /**
      * @breif  Whether the vocabulary is ready.
+     * @author smallchimney
      * @return {@code true} after the words are created and weighted
      */
     virtual bool ready() const noexcept { return m_bInit; }
@@ -368,7 +363,7 @@ public:
     void load(const std::string& _Filename, LoadMode _Mode = AUTO) noexcept(false);
 
     /**
-     * @breif  Saves the vocabulary to a DBOW2 format yaml file
+     * @breif  Saves the vocabulary to a DBoW2 format yaml file
      * @author smallchimney
      * @param  _File    The vocabulary file.
      * @param  _F       The `toString()` method for each descriptor,
@@ -390,7 +385,7 @@ public:
     /**
      * @breif  Loads the vocabulary from a file
      * @author smallchimney
-     * @param  _File    yaml format vocabulary in DBOW2
+     * @param  _File    yaml format vocabulary in DBoW2
      * @param  _F       The `toString()` method for each descriptor,
      *                  keep {@code nullptr} for `Eigen::<<()`.
      */
@@ -496,7 +491,7 @@ protected:
      * @param _Feature  single feature to be transformed
      * @param _ID (out) word id
      */
-    virtual void _transform(const Descriptor& _Feature, WordId& _ID) const;
+    virtual void _transform(const Descriptor& _Feature, WordId& _ID) const noexcept(false);
 
     /**
      * @breif Returns the word id associated to a feature (thread safe)
@@ -508,7 +503,7 @@ protected:
      * @return               The leaf/parent ID of the word
      */
     NodeId _transform(const Descriptor& _Feature,
-            WordId& _WordId, WordValue& _Weight, unsigned _LevelsUp = 0) const;
+            WordId& _WordId, WordValue& _Weight, unsigned _LevelsUp = 0) const noexcept(false);
 
     /**
      * @breif Creates a level in the tree, under the parent, by running
@@ -588,7 +583,9 @@ template <typename TScalar, size_t DescL>
 TemplatedVocabulary<TScalar, DescL>::TemplatedVocabulary(
         TemplatedVocabulary<TScalar, DescL>&& _Vocab) noexcept {
     clear();  // Safety free the memory
-    m_pNodes.reset(std::move(_Vocab.m_pNodes));
+    m_uiL = _Vocab.m_uiL;
+    m_uiK = _Vocab.m_uiK;
+    m_pNodes = std::move(_Vocab.m_pNodes);
     m_aWords = std::move(_Vocab.m_aWords);
     setWeightingType(_Vocab.m_eWeighting);
     setScoringType(_Vocab.m_eScoring);
@@ -644,10 +641,10 @@ void TemplatedVocabulary<TScalar, DescL>::create(const ConstDataSet& _TrainingDa
     _buildTree(features);
     // Create the words
     _createWords();
-    // Set the weight of each node of the tree
-    _setNodeWeights(_TrainingData);
     // Set the initialized label
     m_bInit = !empty();
+    // Set the weight of each node of the tree
+    _setNodeWeights(_TrainingData);
 }
 
 template <typename TScalar, size_t DescL>
@@ -667,7 +664,7 @@ void TemplatedVocabulary<TScalar, DescL>::create(
 
 template <typename TScalar, size_t DescL>
 WordId TemplatedVocabulary<TScalar, DescL>::transform(
-        const Descriptor& _Feature) const {
+        const Descriptor& _Feature) const noexcept(false) {
     WordId wid = 0;
     if(!empty()) {
         _transform(_Feature, wid);
@@ -677,8 +674,8 @@ WordId TemplatedVocabulary<TScalar, DescL>::transform(
 
 template <typename TScalar, size_t DescL>
 void TemplatedVocabulary<TScalar, DescL>::transform(
-        const std::vector<Descriptor>& _Features, BowVector& _BowVec,
-        const FeatureVectorPtr& _FeatVec, const unsigned _LevelsUp) const {
+        const DescriptorArray& _Features, BowVector& _BowVec,
+        const FeatureVectorPtr& _FeatVec, const unsigned _LevelsUp) const noexcept(false) {
     typedef unsigned ThreadNum;
     typedef size_t TaskNum;
     static const ThreadNum THREADS_MAX_LIMIT =
@@ -697,7 +694,7 @@ void TemplatedVocabulary<TScalar, DescL>::transform(
 
     // Depart the tasks
     auto taskNum = static_cast<TaskNum>(ceil((double)_Features.size() / threadNum));
-    std::vector<std::vector<Descriptor>> features(0);
+    DescriptorsSet features(0);
     features.reserve(threadNum);
     auto iter1 = _Features.begin(), iter2 = _Features.begin() + taskNum;
     for(ThreadNum i = 0; i < threadNum - 1; i++, iter1 = iter2, iter2 += taskNum) {
@@ -723,10 +720,10 @@ void TemplatedVocabulary<TScalar, DescL>::transform(
 
 template <typename TScalar, size_t DescL>
 void TemplatedVocabulary<TScalar, DescL>::transform(
-        const DescriptorArray& _Features, BowVector& _BowVec,
-        const FeatureVectorPtr& _FeatVec, const unsigned _LevelsUp) const {
-    std::vector<Descriptor> features(static_cast<size_t>(_Features.rows()));
-    DescriptorArray::Map(features.data() -> data(), _Features.rows(), DescL) = _Features;
+        const Descriptors& _Features, BowVector& _BowVec,
+        const FeatureVectorPtr& _FeatVec, const unsigned _LevelsUp) const noexcept(false) {
+    DescriptorArray features(static_cast<size_t>(_Features.rows()));
+    Descriptors::Map(features.data() -> data(), _Features.rows(), DescL) = _Features;
     transform(features, _BowVec, _FeatVec, _LevelsUp);
 }
 
@@ -879,7 +876,11 @@ void TemplatedVocabulary<TScalar, DescL>::save(
         const std::string& _Filename, const bool _Binary) const noexcept(false) {
     boost::filesystem::path file(_Filename);
     if(file.is_relative()) {
+#ifdef PKG_DIR
         file = boost::filesystem::path(PKG_DIR)/"vocab"/_Filename;
+#else
+        file = boost::filesystem::path("/tmp/vocab")/_Filename;
+#endif
     }
     std::cout << "Trying to save vocabulary at: " << file.native() << std::endl;
     // Generate the directory
@@ -904,7 +905,11 @@ void TemplatedVocabulary<TScalar, DescL>::load(
         const std::string& _Filename, LoadMode _Mode) noexcept(false) {
     boost::filesystem::path file(_Filename);
     if(file.is_relative()) {
+#ifdef PKG_DIR
         file = boost::filesystem::path(PKG_DIR)/"vocab"/_Filename;
+#else
+        file = boost::filesystem::path("/tmp/vocab")/_Filename;
+#endif
     }
     if(!boost::filesystem::exists(file) || boost::filesystem::is_directory(file)) {
         throw std::runtime_error(TDBOW_LOG(file.native() << " not exist or is a directory!"));
@@ -1076,7 +1081,7 @@ void TemplatedVocabulary<TScalar, DescL>::loadYAML(
             std::string buf;
             buf << node["descriptor"];
             if(_F == nullptr) {
-                DescriptorUtil::fromString(buf, nd.descriptor);
+                util::fromString(buf, nd.descriptor);
             } else {
                 nd.descriptor = _F(buf);
             }
@@ -1149,7 +1154,7 @@ void TemplatedVocabulary<TScalar, DescL>::write(
             streamBuf.write((char*)&child.weight, sizeof(child.weight));
             streamBuf.write((char*)&child.weightBackup, sizeof(child.weightBackup));
             // Since the words will save later, no need for redundant
-            DescriptorUtil::toBinary(child.descriptor, streamBuf);
+            util::toBinary(child.descriptor, streamBuf);
             // Add to parent list
             if(!child.isLeaf())parents.emplace_back(cid);
         }
@@ -1250,7 +1255,7 @@ void TemplatedVocabulary<TScalar, DescL>::read(std::istream& _In) noexcept(false
         // Since the children of a single parent is processed consecutively,
         // the original order of children will be kept, nothing will be changed.
         (*m_pNodes)[node.parent].children.emplace_back(id);
-        DescriptorUtil::fromBinary(*in, node.descriptor);
+        util::fromBinary(*in, node.descriptor);
     }
     // Load words
     for(size_t i = 0; i < wordsNum; i++) {
@@ -1320,9 +1325,9 @@ void TemplatedVocabulary<TScalar, DescL>::_getFeatures(
 
 template <typename TScalar, size_t DescL>
 void TemplatedVocabulary<TScalar, DescL>::_transform_thread(
-        const std::vector<Descriptor>& _Features, BowVector& _BowVec,
-        const FeatureVectorPtr& _FeatVec, const unsigned _LevelsUp) const {
-    if(!m_bInit) {
+        const DescriptorArray& _Features, BowVector& _BowVec,
+        const FeatureVectorPtr& _FeatVec, const unsigned _LevelsUp) const noexcept(false) {
+    if(!ready()) {
         throw std::runtime_error(TDBOW_LOG(
                 "The vocabulary is empty, must created before transform."));
     }
@@ -1347,7 +1352,7 @@ void TemplatedVocabulary<TScalar, DescL>::_transform_thread(
             break;
     }
     assert(f != nullptr);
-    unsigned idx = 0;
+    size_t idx = 0;
     for(const auto& feature : _Features) {
         WordId id = 0;
         WordValue w = 0.;
@@ -1376,29 +1381,33 @@ void TemplatedVocabulary<TScalar, DescL>::_transform_thread(
 
 template <typename TScalar, size_t DescL>
 void TemplatedVocabulary<TScalar, DescL>::_transform(
-        const Descriptor& _Feature, WordId& _ID) const {
+        const Descriptor& _Feature, WordId& _ID) const noexcept(false) {
     WordValue weight = 0;
     _transform(_Feature, _ID, weight);
 }
 
 template <typename TScalar, size_t DescL>
 NodeId TemplatedVocabulary<TScalar, DescL>::_transform(const Descriptor& _Feature,
-        WordId& _WordId, WordValue& _Weight, const unsigned int _LevelsUp) const {
+        WordId& _WordId, WordValue& _Weight, const unsigned int _LevelsUp) const noexcept(false) {
+    if(!ready()) {
+        throw std::runtime_error(TDBOW_LOG(
+                "The vocabulary is empty, must created before transform."));
+    }
     // Propagate the feature down the tree
-    auto requiredLevel = m_uiL >= _LevelsUp ? m_uiL - _LevelsUp : m_uiL;
+    auto requiredLevel = m_uiL >= _LevelsUp ? m_uiL - _LevelsUp : 0;
     NodeId selected = 0, ret = 0; // start from root
     unsigned currentLevel = 0;
     do {
-        auto min = std::numeric_limits<typename DescriptorUtil::distance_type>::max();
+        auto min = std::numeric_limits<typename util::distance_type>::max();
         for(const auto& cid : (*m_pNodes)[selected].children) {
             const auto& child = (*m_pNodes)[cid];
-            const auto d = DescriptorUtil::distance(_Feature, child.descriptor);
+            const auto d = util::distance(_Feature, child.descriptor);
             if(d < min) {
                 min = d;
                 selected = cid;
             }
         }
-        if(++currentLevel == requiredLevel) {
+        if(currentLevel++ == requiredLevel) {
             ret = selected;
         }
     } while(!(*m_pNodes)[selected].isLeaf());
@@ -1414,18 +1423,23 @@ void TemplatedVocabulary<TScalar, DescL>::_buildTree(
     std::queue<Task> tasks;
     tasks.push(std::make_tuple(0, _Descriptors, 1));
 
+//    boost::dynamic_bitset<> levels(m_uiL);
     while(!tasks.empty()) {
         const auto& task = tasks.front();
         const auto& descriptors = std::get<1>(task);
         const auto parentId = std::get<0>(task);
         const auto level = std::get<2>(task);
+//        if(!levels.test(level - 1)) {
+//            levels.set(level - 1);
+//            std::cout << TDBOW_LOG("level " << level << " start building.");
+//        }
         if(descriptors.empty()) {
             tasks.pop();
             continue;
         }
 
         // Features associated to each cluster using K-means
-        std::vector<Descriptor> centers(0);
+        DescriptorArray centers(0);
         std::vector<std::vector<DescriptorConstPtr>> clusters(0);
         KMeansUtil(m_uiK).process(descriptors, centers, clusters);
         assert(centers.size() == clusters.size());
@@ -1516,5 +1530,4 @@ void operator << (T& i, const YAML::Node& node) {
 
 } // namespace TDBoW
 
-
-#endif
+#endif  // __ROCKAUTO_TDBOW_TEMPLATED_VOCABULARY_HPP__
