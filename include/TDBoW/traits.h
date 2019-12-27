@@ -49,6 +49,7 @@ namespace type_trait {
     typedef int type_id;
 }
 
+
 /**
  * @brief  Since we cannot get standard type_info for TScalar on
  *         different runtime context, we can force use custom standard.

@@ -66,7 +66,7 @@ namespace TDBoW {
 class GeneralScoring {
 public:
     /**
-     * Computes the score between two vectors. Vectors must be sorted and
+     * @brief Computes the score between two vectors. Vectors must be sorted and
      * normalized if necessary
      * @param v (in/out)
      * @param w (in/out)
@@ -88,10 +88,10 @@ public:
             unsigned _MaxResults, unsigned _MinCommon, EntryId _MaxId) const final;
 
     /**
-     * Returns whether a vector must be normalized before scoring according
+     * @brief Returns whether a vector must be normalized before scoring according
      * to the scoring scheme
      * @param norm norm to use
-     * @return true iff must normalize
+     * @return true if must normalize
      */
     virtual bool mustNormalize(LNorm &norm) const = 0;
 

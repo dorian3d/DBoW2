@@ -196,6 +196,13 @@ public:
 
     // Descriptor mean value and distance
 
+    /**
+     * @breif  Get the mean of the descriptors
+     * @author smallchimney
+     * @param  _Descriptors  Input descriptors
+     * @param  _Callback     Mean function
+     * @return               The mean of the descriptors
+     */
     static Descriptor _meanValue(
             const std::vector<DescriptorConstPtr>& _Descriptors,
             const MeanCallback& _Callback) noexcept(false) {
@@ -204,7 +211,12 @@ public:
         }
         return _Callback(_Descriptors);
     }
-
+    /**
+     * @breif  Accord to type of descriptors,choice the corresponding mean function
+     * @author smallchimney
+     * @param  _Descriptors  Input descriptors
+     * @return               The mean of the descriptors
+     */
     static Descriptor meanValue(const std::vector<DescriptorConstPtr>& _Descriptors) noexcept(false) {
         if(std::is_same<TScalar, uint8_t>()) {
             return _meanValue(_Descriptors, binaryMean);
@@ -217,13 +229,26 @@ public:
                                      "a processing function must be explicitly specified."));
         }
     }
-
+    /**
+     * @breif  Accord to type of descriptors,choice the corresponding mean function
+     * @author smallchimney
+     * @param  _A         Input a descriptor
+     * @param  _B         Input another descriptor
+     * @param  _Callback  Distance function
+     * @return            The distance of the two descriptors
+     */
     static distance_type _distance(
             const Descriptor& _A, const Descriptor& _B,
             const DistanceCallback& _Callback) {
         return _Callback(_A, _B);
     }
-
+    /**
+     * @breif  Accord to type of descriptors,choice the corresponding distance function
+     * @author smallchimney
+     * @param  _A  Input a descriptor
+     * @param  _B  Input another descriptor
+     * @return     The distance of the two descriptors
+     */
     static distance_type distance(const Descriptor& _A, const Descriptor& _B) noexcept(false) {
         if(std::is_same<TScalar, uint8_t>()) {
             return _distance(_A, _B, binaryDistance);
@@ -236,28 +261,84 @@ public:
                                      "a processing function must be explicitly specified."));
         }
     }
-
+    /**
+     * @breif  Change matrix to a binary
+     * @author smallchimney
+     * @param  _Mat       Input a matrix
+     * @param  _Out(out)  The binary of the matrix
+     */
     template <typename Matrix>
     static void toBinary(const Matrix& _Mat, std::ostream& _Out);
-
+    /**
+     * @breif  Read binary data then change to matrix
+     * @author smallchimney
+     * @param  _In        Binary stream
+     * @param  _Mat(out)  The matrix
+     */
     template <typename Matrix>
     static void fromBinary(std::istream& _In, Matrix& _Mat);
-
+    /**
+     * @breif  Change descriptor to string
+     * @author smallchimney
+     * @param  _Desc  Input a matrix
+     * @return        The string of the descriptor
+     */
     static std::string toString(const Descriptor& _Desc);
-
+    /**
+     * @breif  change the string data to descriptor
+     * @author smallchimney
+     * @param  _In        String data
+     * @param  _Desc(out) The descriptor
+     */
     static void fromString(const std::string& _In, Descriptor& _Desc) noexcept(false);
-
+    /**
+     * @breif  Visual the reasult of the BinaryDescriptor
+     * @author smallchimney
+     * @param  _Out(out)   ostream
+     * @param  _Descriptor The descriptor
+     */
     static std::ostream& visualBinary(std::ostream& _Out,
             const BinaryDescriptor& _Descriptor);
-
+    /**
+     * @breif  Visual the reasult of A array of BinaryDescriptor
+     * @author smallchimney
+     * @param  _Out(out)   ostream
+     * @param  _Descriptor The array of descriptor
+     */
     static std::ostream& visualBinary(std::ostream& _Out,
             const BinaryDescriptors& _Descriptor);
 
 protected:
-    static Descriptor binaryMean(const std::vector<DescriptorConstPtr>& _Descriptors);
-    static Descriptor valueMean(const std::vector<DescriptorConstPtr>& _Descriptors);
 
+    /**
+     * @breif  Calculate the binary descriptors' mean
+     * @author smallchimney
+     * @param  _Descriptors  Input descriptors
+     * @return               The mean of the descriptors
+     */
+    static Descriptor binaryMean(const std::vector<DescriptorConstPtr>& _Descriptors);
+    /**
+     * @breif  Calculate the int/float/double type descriptors' mean
+     * @author smallchimney
+     * @param  _Descriptors  Input descriptors
+     * @return               The mean of the descriptors
+     */
+    static Descriptor valueMean(const std::vector<DescriptorConstPtr>& _Descriptors);
+    /**
+     * @breif  Calculate the distance of the tow binary descriptors
+     * @author smallchimney
+     * @param  _A  A descriptor
+     * @param  _B  A another descriptors
+     * @return     The distance of the two binary descriptors
+     */
     static distance_type binaryDistance(const Descriptor& _A, const Descriptor& _B);
+    /**
+     * @breif  Calculate the distance of the tow int/float/double descriptors
+     * @author smallchimney
+     * @param  _A  A descriptor
+     * @param  _B  A another descriptors
+     * @return     The distance of the two descriptors
+     */
     static distance_type valueDistance(const Descriptor& _A, const Descriptor& _B);
 
 };

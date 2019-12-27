@@ -106,8 +106,10 @@ public:
     /**
      * @brief For now I decide to drop the save/load function for database,
      *        because it's a temperature data, for query history only.
-     * @param _Filename  Absolute/relative file path, will search
-     *                   relative from the "vocab" direction
+     * @param _Filename        Absolute/relative file path, will search
+     *                              relative from the "vocab" direction
+     * @param _UseDirectIdx    Whether use direct index, default is true
+     * @param _DirectIdxLevel  The level of direct index, default is 0
      */
     explicit TemplatedDatabase(const std::string& _Filename,
             bool _UseDirectIdx = true, unsigned _DirectIdxLevel = 0);
@@ -117,6 +119,8 @@ public:
      *        because it's a temperature data, for query history only.
      * @param _Filename  Absolute/relative file path, will search
      *                   relative from the "vocab" direction
+     * @param _UseDirectIdx    Whether use direct index, default is true
+     * @param _DirectIdxLevel  The level of direct index, default is 0
      */
     explicit TemplatedDatabase(const char* _Filename,
             bool _UseDirectIdx = true, unsigned _DirectIdxLevel = 0);
@@ -210,7 +214,7 @@ public:
                        unsigned _MinCommon = 5, EntryId _MaxId = 0) const noexcept(false);
 
     /**
-     * Empties the database
+     * @breif Empties the database
      */
     void clear() {
         m_aIFile.clear();
@@ -221,13 +225,14 @@ public:
     }
 
     /**
-     * Stops those words whose weight is below minWeight.
+     * @breif Stops those words whose weight is below minWeight.
      * Words are stopped by setting their weight to 0. There are not returned
      * later when transforming image features into vectors.
      * Note that when using IDF or TF_IDF, the weight is the idf part, which
      * is equivalent to -log(f), where f is the frequency of the word
      * (f = Ni/N, Ni: number of training images where the word is present,
      * N: number of training images).
+     * @param  _MinLimit the number of minimum weight
      * @return number of words stopped now
      */
     virtual size_t stopWords(WordValue _MinLimit) {
@@ -272,7 +277,7 @@ public:
 
     /**
      * Returns the a feature vector associated with a database entry
-     * @param id entry id (must be < size())
+     * @param  _ID entry id (must be < size())
      * @return const reference to map of nodes and their associated features in
      *   the given entry
      */

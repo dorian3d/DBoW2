@@ -52,16 +52,16 @@ struct IFPair {
     IFPair(IFPair&&) = default;
 
     /**
-     * Creates an inverted file pair
+     * @brief Creates an inverted file pair
      * @param eid entry id
      * @param wv word weight
      */
     IFPair(EntryId eid, WordValue wv): entry_id(eid), word_weight(wv) {}
 
     /**
-     * Compares the entry ids
+     * @brief Compares the entry ids
      * @param eid
-     * @return true iff this entry id is the same as eid
+     * @return true if this entry id is the same as eid
      */
     bool operator==(const EntryId& _Eid) const { return entry_id == _Eid; }
 };

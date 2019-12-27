@@ -105,7 +105,7 @@ public:
     // Constructors
 
     /**
-     * Initiates an empty vocabulary
+     * @breif Initiates an empty vocabulary
      * @param _K          Branching factor
      * @param _L          Depth levels
      * @param _Weighting  Weighting type
@@ -125,6 +125,7 @@ public:
 
     /**
      * @breif Memory copy constructor is delete
+     * @param _Vocab  original vocabulary which will drop all the data
      */
     TemplatedVocabulary(TemplatedVocabulary<TScalar, DescL>& _Vocab) = delete;
 
@@ -146,7 +147,7 @@ public:
     // Build methods
 
     /**
-     * Creates a vocabulary from the training features with the already
+     * @breif Creates a vocabulary from the training features with the already
      * defined parameters
      * @param _TrainingData
      */
@@ -222,13 +223,14 @@ public:
     void clear(bool _Alloc = false);
 
     /**
-     * Stops those words whose weight is below minWeight.
+     * @breif Stops those words whose weight is below minWeight.
      * Words are stopped by setting their weight to 0. There are not returned
      * later when transforming image features into vectors.
      * Note that when using IDF or TF_IDF, the weight is the idf part, which
      * is equivalent to -log(f), where f is the frequency of the word
      * (f = Ni/N, Ni: number of training images where the word is present,
      * N: number of training images).
+     * @param  number of minimum value
      * @return number of words stopped now
      */
     virtual size_t stopWords(WordValue _MinLimit);

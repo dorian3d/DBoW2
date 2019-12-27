@@ -80,7 +80,7 @@ public:
     Result() = default;
 
     /**
-     * Creates a result with the given data
+     * @brief Creates a result with the given data
      * @param _id entry id
      * @param _score score
      */
@@ -89,52 +89,52 @@ public:
     virtual ~Result() = default;
 
     /**
-     * Compares the scores of two results
-     * @return true iff this.score < r.score
+     * @brief  Compares the scores of two results
+     * @return true if this.score < r.score
      */
     bool operator<(const Result &r) const {
         return this->Score < r.Score;
     }
 
     /**
-     * Compares the scores of two results
-     * @return true iff this.score > r.score
+     * @brief  Compares the scores of two results
+     * @return true if this.score > r.score
      */
     bool operator>(const Result &r) const {
         return this->Score > r.Score;
     }
 
     /**
-     * Compares the entry id of the result
-     * @return true iff this.id == id
+     * @brief  Compares the entry id of the result
+     * @return true if this.id == id
      */
     bool operator==(EntryId id) const {
         return this->Id == id;
     }
 
     /**
-     * Compares the score of this entry with a given one
+     * @brief Compares the score of this entry with a given one
      * @param s score to compare with
-     * @return true iff this score < s
+     * @return true if this score < s
      */
     bool operator<(double s) const {
         return this->Score < s;
     }
 
     /**
-     * Compares the score of this entry with a given one
+     * @brief Compares the score of this entry with a given one
      * @param s score to compare with
-     * @return true iff this score > s
+     * @return true if this score > s
      */
     bool operator>(double s) const {
         return this->Score > s;
     }
 
     /**
-     * Compares the score of two results
+     * @brief Compares the score of two results
      * @param a
      * @param b
-     * @return true iff a.Score > b.Score
+     * @return true if a.Score > b.Score
      */
     static bool gt(const Result &a, const Result &b)
     {
@@ -142,28 +142,30 @@ public:
     }
 
     /**
-     * Compares the scores of two results
-     * @return true iff a.Score > b.Score
+     * @brief Compares the scores of two results
+     * @param a
+     * @param b
+     * @return true if a.Score > b.Score
      */
     static bool ge(const Result &a, const Result &b) {
         return a.Score > b.Score;
     }
 
     /**
-     * Returns true iff a.Score >= b.Score
+     * @brief Returns true if a.Score >= b.Score
      * @param a
      * @param b
-     * @return true iff a.Score >= b.Score
+     * @return true if a.Score >= b.Score
      */
     static bool geq(const Result &a, const Result &b) {
         return a.Score >= b.Score;
     }
 
     /**
-     * Returns true iff a.Score >= s
+     * @brief Judge whether the a.score is greater than s
      * @param a
      * @param s
-     * @return true iff a.Score >= s
+     * @return true if a.Score >= s
      */
     static bool geqv(const Result &a, double s) {
         return a.Score >= s;
@@ -171,17 +173,17 @@ public:
 
 
     /**
-     * Returns true iff a.Id < b.Id
+     * @brief Judge whether the a.Id is less than b.Id
      * @param a
      * @param b
-     * @return true iff a.Id < b.Id
+     * @return true if a.Id < b.Id
      */
     static bool ltId(const Result &a, const Result &b) {
         return a.Id < b.Id;
     }
 
     /**
-     * Prints a string version of the result
+     * @brief Prints a string version of the result
      * @param os ostream
      * @param ret Result to print
      */
@@ -193,14 +195,14 @@ class QueryResults: public std::vector<Result> {
 public:
 
     /**
-     * Prints a string version of the results
+     * @brief Prints a string version of the results
      * @param os ostream
      * @param ret QueryResults to print
      */
     friend std::ostream & operator<<(std::ostream& os, const QueryResults& ret );
 
     /**
-     * Saves a matlab file with the results
+     * @brief Saves a matlab file with the results
      * @param filename
      */
     void saveM(const std::string &filename) const;

@@ -137,7 +137,7 @@ public:
 	BowVector& operator =(const BowVector& _Obj);
 
 	/**
-	 * Adds a value to a word value existing in the vector, or creates a new
+	 * @brief Adds a value to a word value existing in the vector, or creates a new
 	 * word with the given value
 	 * @param id word id to look for
 	 * @param v value to create the word with, or to add to existing word
@@ -152,26 +152,27 @@ public:
 	void addIfNotExist(WordId _ID, WordValue _Val);
 
 	/**
-	 * L1-Normalizes the values in the vector 
+	 * @brief L1-Normalizes the values in the vector
 	 * @param _NormType   L1 or L2
 	 */
 	void normalize(LNorm _NormType);
 	
 	/**
-	 * Prints the content of the bow vector
-	 * @param out stream
-	 * @param v
+	 * @brief Prints the content of the bow vector
+	 * @param _Out stream
+	 * @param _Vec bow vector
+	 * @return     ostream
 	 */
 	friend std::ostream& operator<<(std::ostream& _Out, const BowVector& _Vec);
 	
 	/**
-	 * Saves the bow vector as a vector in a binary file
+	 * @brief Saves the bow vector as a vector in a binary file
 	 * @param _Filename
 	 */
     void saveBinary(const std::string& _Filename) const;
 
     /**
-	 * Load the bow vector as a vector in a binary file
+	 * @brief Load the bow vector as a vector in a binary file
 	 * @param _Filename
 	 */
     void loadBinary(const std::string& _Filename);

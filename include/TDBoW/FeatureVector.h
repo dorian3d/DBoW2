@@ -92,20 +92,25 @@ public:
     ~FeatureVector() = default;
 
     /**
-     * Adds a feature to an existing node, or adds a new node with an initial
+     * @brief Adds a feature to an existing node, or adds a new node with an initial
      * feature
-     * @param id node id to add or to modify
-     * @param i_feature index of feature to add to the given node
+     * @param _ID         node id to add or to modify
+     * @param _FeatureIdx index of feature to add to the given node
      */
     void addFeature(NodeId _ID, size_t _FeatureIdx);
 
     /**
-     * Sends a string versions of the feature vector through the stream
-     * @param out stream
-     * @param v feature vector
+     * @brief Sends a string versions of the feature vector through the stream
+     * @param _Out stream
+     * @param _Vec feature vector
      */
     friend std::ostream& operator<<(std::ostream& _Out, const FeatureVector& _Vec);
 
+    /**
+     * @brief Sends a string versions of the feature vector through the stream
+     * @param _Out stream
+     * @param pair value type of feature vector
+     */
     friend std::ostream& operator<<(std::ostream& _Out, const FeatureVector::value_type& pair);
 
 private:

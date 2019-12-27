@@ -63,8 +63,12 @@ BowVector& BowVector::operator =(const BowVector& _Obj) {
     return *this;
 }
 
-// --------------------------------------------------------------------------
-
+/**
+ * @brief Adds a value to a word value existing in the vector, or creates a new
+ * word with the given value
+ * @param id word id to look for
+ * @param v value to create the word with, or to add to existing word
+ */
 void BowVector::addWeight(const WordId _ID, const WordValue _Val) {
     SpinLock locker(m_bLocked);
     auto iter = lower_bound(_ID);
@@ -75,8 +79,11 @@ void BowVector::addWeight(const WordId _ID, const WordValue _Val) {
     }
 }
 
-// --------------------------------------------------------------------------
-
+/**
+ * @brief Adds a word with a value to the vector only if this does not exist yet
+ * @param _ID   Word id to look for
+ * @param _Val  Value to give to the word if this does not exist
+ */
 void BowVector::addIfNotExist(const WordId _ID, const WordValue _Val) {
     SpinLock locker(m_bLocked);
     auto vit = this->lower_bound(_ID);
@@ -85,8 +92,10 @@ void BowVector::addIfNotExist(const WordId _ID, const WordValue _Val) {
     }
 }
 
-// --------------------------------------------------------------------------
-
+/**
+ * @brief L1-Normalizes the values in the vector
+ * @param _NormType   L1 or L2
+ */
 void BowVector::normalize(const LNorm _NormType) {
     double norm = 0.0;
     SpinLock locker(m_bLocked);
@@ -112,8 +121,12 @@ void BowVector::normalize(const LNorm _NormType) {
     }
 }
 
-// -------------------------------------------------------------------------
-
+/**
+ * @brief Prints the content of the bow vector
+ * @param _Out stream
+ * @param _Vec bow vector
+ * @return     ostream
+ */
 std::ostream& operator<< (std::ostream& _Out, const BowVector& _Vec) {
     SpinLock locker(_Vec.m_bLocked);
     if(_Vec.empty())return _Out << "<empty>";
@@ -125,9 +138,10 @@ std::ostream& operator<< (std::ostream& _Out, const BowVector& _Vec) {
     }
     return _Out;
 }
-
-// --------------------------------------------------------------------------
-
+/**
+ * @brief Saves the bow vector as a vector in a binary file
+ * @param _Filename
+ */
 void BowVector::saveBinary(const std::string& _Filename) const {
     SpinLock locker(m_bLocked);
     std::fstream f(_Filename.c_str(), std::ios::out|std::ios::binary);
@@ -138,9 +152,10 @@ void BowVector::saveBinary(const std::string& _Filename) const {
     }
     f.close();
 }
-
-// --------------------------------------------------------------------------
-
+/**
+ * @brief Load the bow vector as a vector in a binary file
+ * @param _Filename
+ */
 void BowVector::loadBinary(const std::string& _Filename) {
     SpinLock locker(m_bLocked);
     std::fstream f(_Filename.c_str(), std::ios::in|std::ios::binary);
@@ -155,8 +170,11 @@ void BowVector::loadBinary(const std::string& _Filename) {
     f.close();
 }
 
-// --------------------------------------------------------------------------
-
+/**
+ * @brief Saves the bow vector as a vector in a MatLab file
+ * @param _Filename
+ * @param _Width     number of words in the vocabulary
+ */
 void BowVector::saveM(const std::string& _Filename, size_t _Width) const {
     SpinLock locker(m_bLocked);
     std::fstream f(_Filename.c_str(), std::ios::out);
