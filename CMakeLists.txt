@@ -44,11 +44,13 @@ if(BUILD_DBoW2)
   add_library(${PROJECT_NAME} ${LIB_SHARED} ${SRCS})
   target_include_directories(${PROJECT_NAME} PUBLIC include/DBoW2/)
   target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
 endif(BUILD_DBoW2)
 
 if(BUILD_Demo)
   add_executable(demo demo/demo.cpp)
   target_link_libraries(demo ${PROJECT_NAME} ${OpenCV_LIBS})
+  set_target_properties(demo PROPERTIES CXX_STANDARD 11)
   file(COPY demo/images DESTINATION ${CMAKE_BINARY_DIR}/)
 endif(BUILD_Demo)
 
@@ -64,3 +66,4 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/DBoW2Config.cmake"
 install(FILES "${PROJECT_BINARY_DIR}/DBoW2Config.cmake" 
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/DBoW2/)
 install(DIRECTORY ${DEPENDENCY_INSTALL_DIR}/ DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
+
