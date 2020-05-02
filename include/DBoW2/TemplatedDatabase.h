@@ -436,7 +436,6 @@ EntryId TemplatedDatabase<TDescriptor, F>::add(const BowVector &v,
   EntryId entry_id = m_nentries++;
 
   BowVector::const_iterator vit;
-  std::vector<unsigned int>::const_iterator iit;
 
   if(m_use_di)
   {
