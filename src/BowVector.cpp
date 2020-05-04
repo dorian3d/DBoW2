@@ -88,7 +88,6 @@ void BowVector::normalize(LNorm norm_type)
 std::ostream& operator<< (std::ostream &out, const BowVector &v)
 {
   BowVector::const_iterator vit;
-  std::vector<unsigned int>::const_iterator iit;
   unsigned int i = 0; 
   const unsigned int N = v.size();
   for(vit = v.begin(); vit != v.end(); ++vit, ++i)
