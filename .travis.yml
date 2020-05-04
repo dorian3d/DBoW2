@@ -1,16 +1,14 @@
 language: cpp
 os:
     - linux
+    - osx
 dist:
     - bionic
-compiler:
-    - clang
-    - gcc
+osx_image:
+    - xcode11.3
 env:
     - OPENCV_BRANCH=master
     - OPENCV_BRANCH=3.4
-before_install:
-    - sudo apt-get update
 before_script:
     - git clone --single-branch --branch ${OPENCV_BRANCH} https://github.com/opencv/opencv.git
     - pushd opencv
