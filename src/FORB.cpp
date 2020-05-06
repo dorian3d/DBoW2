@@ -97,7 +97,7 @@ double FORB::distance(const FORB::TDescriptor &a,
       (sizeof(uint64_t) - 1) * CHAR_BIT;
   }
   
-  return ret;
+  return static_cast<double>(ret);
   
   // // If uint64_t is not defined in your system, you can try this 
   // // portable approach (requires DUtils from DLib)
@@ -171,14 +171,14 @@ void FORB::toMat32F(const std::vector<TDescriptor> &descriptors,
     
     for(int j = 0; j < C; ++j, p += 8)
     {
-      p[0] = (desc[j] & (1 << 7) ? 1 : 0);
-      p[1] = (desc[j] & (1 << 6) ? 1 : 0);
-      p[2] = (desc[j] & (1 << 5) ? 1 : 0);
-      p[3] = (desc[j] & (1 << 4) ? 1 : 0);
-      p[4] = (desc[j] & (1 << 3) ? 1 : 0);
-      p[5] = (desc[j] & (1 << 2) ? 1 : 0);
-      p[6] = (desc[j] & (1 << 1) ? 1 : 0);
-      p[7] = desc[j] & (1);
+      p[0] = (desc[j] & (1 << 7) ? 1.f : 0.f);
+      p[1] = (desc[j] & (1 << 6) ? 1.f : 0.f);
+      p[2] = (desc[j] & (1 << 5) ? 1.f : 0.f);
+      p[3] = (desc[j] & (1 << 4) ? 1.f : 0.f);
+      p[4] = (desc[j] & (1 << 3) ? 1.f : 0.f);
+      p[5] = (desc[j] & (1 << 2) ? 1.f : 0.f);
+      p[6] = (desc[j] & (1 << 1) ? 1.f : 0.f);
+      p[7] = (desc[j] & (1)      ? 1.f : 0.f);
     }
   } 
 }
@@ -187,38 +187,7 @@ void FORB::toMat32F(const std::vector<TDescriptor> &descriptors,
 
 void FORB::toMat32F(const cv::Mat &descriptors, cv::Mat &mat)
 {
-
   descriptors.convertTo(mat, CV_32F);
-  return; 
-
-  if(descriptors.empty())
-  {
-    mat.release();
-    return;
-  }
-  
-  const int N = descriptors.rows;
-  const int C = descriptors.cols;
-  
-  mat.create(N, FORB::L*8, CV_32F);
-  float *p = mat.ptr<float>(); // p[i] == 1 or 0
-  
-  const unsigned char *desc = descriptors.ptr<unsigned char>();
-  
-  for(int i = 0; i < N; ++i, desc += C)
-  {
-    for(int j = 0; j < C; ++j, p += 8)
-    {
-      p[0] = (desc[j] & (1 << 7) ? 1 : 0);
-      p[1] = (desc[j] & (1 << 6) ? 1 : 0);
-      p[2] = (desc[j] & (1 << 5) ? 1 : 0);
-      p[3] = (desc[j] & (1 << 4) ? 1 : 0);
-      p[4] = (desc[j] & (1 << 3) ? 1 : 0);
-      p[5] = (desc[j] & (1 << 2) ? 1 : 0);
-      p[6] = (desc[j] & (1 << 1) ? 1 : 0);
-      p[7] = desc[j] & (1);
-    }
-  } 
 }
 
 // --------------------------------------------------------------------------
