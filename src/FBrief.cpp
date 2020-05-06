@@ -91,7 +91,7 @@ void FBrief::toMat32F(const std::vector<TDescriptor> &descriptors,
     float *p = mat.ptr<float>(i);
     for(int j = 0; j < FBrief::L; ++j, ++p)
     {
-      *p = (desc[j] ? 1 : 0);
+      *p = (desc[j] ? 1.f : 0.f);
     }
   } 
 }
