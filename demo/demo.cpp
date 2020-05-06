@@ -105,9 +105,9 @@ void testVocCreation(const vector<vector<cv::Mat > > &features)
   const int k = 9;
   const int L = 3;
   const WeightingType weight = TF_IDF;
-  const ScoringType score = L1_NORM;
+  const ScoringType scoring = L1_NORM;
 
-  OrbVocabulary voc(k, L, weight, score);
+  OrbVocabulary voc(k, L, weight, scoring);
 
   cout << "Creating a small " << k << "^" << L << " vocabulary..." << endl;
   voc.create(features);
