@@ -7,7 +7,7 @@
     Enhanced hierarchical bag-of-word library for C++
   </description>
   <maintainer email="dorian3d@users.noreply.github.com">Dorian Gálvez-López</maintainer>
-  <license>BSD</license>
+  <license>BSD + notification</license>
 
   <buildtool_depend>cmake</buildtool_depend>
   
