@@ -384,12 +384,15 @@ TemplatedDatabase<TDescriptor,F>& TemplatedDatabase<TDescriptor,F>::operator=
 {
   if(this != &db)
   {
+    setVocabulary(*db.m_voc); // The vocabulary must be set before the other
+                              // fields as setVocabulary calls the clear()
+                              // function.
+
     m_dfile = db.m_dfile;
     m_dilevels = db.m_dilevels;
     m_ifile = db.m_ifile;
     m_nentries = db.m_nentries;
     m_use_di = db.m_use_di;
-    setVocabulary(*db.m_voc);
   }
   return *this;
 }
