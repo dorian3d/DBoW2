@@ -15,6 +15,7 @@
 #include <vector>
 #include <numeric>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <algorithm>
 #include <opencv2/core.hpp>
@@ -30,9 +31,9 @@ namespace DBoW2 {
 template<class TDescriptor, class F>
 /// Generic Vocabulary
 class TemplatedVocabulary
-{		
+{
 public:
-  
+
   /**
    * Initiates an empty vocabulary
    * @param k branching factor
@@ -1370,9 +1371,9 @@ void TemplatedVocabulary<TDescriptor,F>::save(const std::string &filename) const
 template<class TDescriptor, class F>
 void TemplatedVocabulary<TDescriptor,F>::saveToTextFile(const std::string &filename) const
 {
-    fstream f;
-    f.open(filename.c_str(),ios_base::out);
-    f << m_k << " " << m_L << " " << " " << m_scoring << " " << m_weighting << endl;
+    std::fstream f;
+    f.open(filename.c_str(), std::ios_base::out);
+    f << m_k << " " << m_L << " " << " " << m_scoring << " " << m_weighting << std::endl;
 
     for(size_t i=1; i<m_nodes.size();i++)
     {
@@ -1384,7 +1385,7 @@ void TemplatedVocabulary<TDescriptor,F>::saveToTextFile(const std::string &filen
         else
             f << 0 << " ";
 
-        f << F::toString(node.descriptor) << " " << (double)node.weight << endl;
+        f << F::toString(node.descriptor) << " " << (double)node.weight <<  std::endl;
     }
 
     f.close();
@@ -1436,7 +1437,7 @@ void TemplatedVocabulary<TDescriptor,F>::load(const std::string &filename)
 template<class TDescriptor, class F>
 void TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &filename)
 {
-    ifstream f;
+    std::ifstream f;
     f.open(filename.c_str());
     if (!f.is_open())
         throw std::string("Could not open file ") + filename;
@@ -1444,9 +1445,9 @@ void TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &fil
     m_words.clear();
     m_nodes.clear();
 
-    string s;
+    std::string s;
     getline(f,s);
-    stringstream ss;
+    std::stringstream ss;
     ss << s;
     ss >> m_k;
     ss >> m_L;
@@ -1474,9 +1475,9 @@ void TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &fil
     m_nodes[0].id = 0;
     while(!f.eof())
     {
-        string snode;
-        getline(f,snode);
-        stringstream ssnode;
+        std::string snode;
+        std::getline(f,snode);
+        std::stringstream ssnode;
         ssnode << snode;
 
         int nid = m_nodes.size();
@@ -1491,10 +1492,10 @@ void TemplatedVocabulary<TDescriptor,F>::loadFromTextFile(const std::string &fil
         int nIsLeaf;
         ssnode >> nIsLeaf;
 
-        stringstream ssd;
+        std::stringstream ssd;
         for(int iD=0;iD<32;iD++) // F::L
         {
-            string sElement;
+            std::string sElement;
             ssnode >> sElement;
             ssd << sElement << " ";
         }

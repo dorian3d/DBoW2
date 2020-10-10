@@ -26,11 +26,7 @@ set(SRCS
   src/BowVector.cpp     src/FBrief.cpp        src/FORB.cpp
   src/FeatureVector.cpp src/QueryResults.cpp  src/ScoringObject.cpp)
 
-set(DEPENDENCY_DIR ${CMAKE_CURRENT_BINARY_DIR}/dependencies)
-set(DEPENDENCY_INSTALL_DIR ${DEPENDENCY_DIR}/install)
-
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
 
 if(BUILD_DBoW2)
   set(LIB_SHARED "SHARED")
@@ -38,14 +34,23 @@ if(BUILD_DBoW2)
     set(LIB_SHARED "STATIC")
   endif(WIN32)
   add_library(${PROJECT_NAME} ${LIB_SHARED} ${SRCS})
-  target_include_directories(${PROJECT_NAME} PUBLIC include/DBoW2/ include/)
-  target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
-  set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
+  target_include_directories(${PROJECT_NAME} PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/DBoW2>
+    $<INSTALL_INTERFACE:include/DBoW2>
+    $<INSTALL_INTERFACE:include/DBoW2/DBoW2>)
+  target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBRARIES})
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 11
+    POSITION_INDEPENDENT_CODE ON
+    DEBUG_POSTFIX _d
+  )
+  add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 endif(BUILD_DBoW2)
 
 if(BUILD_Demo)
   add_executable(demo demo/demo.cpp)
-  target_link_libraries(demo ${PROJECT_NAME} ${OpenCV_LIBS})
+  target_link_libraries(demo ${PROJECT_NAME} ${OpenCV_LIBRARIES})
   set_target_properties(demo PROPERTIES CXX_STANDARD 11)
   file(COPY demo/images DESTINATION ${CMAKE_BINARY_DIR}/)
 endif(BUILD_Demo)
@@ -53,13 +58,14 @@ endif(BUILD_Demo)
 configure_file(src/DBoW2.cmake.in
   "${PROJECT_BINARY_DIR}/DBoW2Config.cmake" @ONLY)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}-targets 
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 if(BUILD_DBoW2)
-  install(DIRECTORY include/DBoW2 DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+  install(DIRECTORY include/DBoW2 DESTINATION ${CMAKE_INSTALL_PREFIX}/include/DBoW2)
 endif()
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/DBoW2Config.cmake"
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
 install(FILES "${PROJECT_BINARY_DIR}/DBoW2Config.cmake" 
   DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cmake/DBoW2/)
-install(DIRECTORY ${DEPENDENCY_INSTALL_DIR}/ DESTINATION ${CMAKE_INSTALL_PREFIX} OPTIONAL)
-
+install(EXPORT ${PROJECT_NAME}-targets DESTINATION lib/cmake/${PROJECT_NAME}
+  NAMESPACE ${PROJECT_NAME}::)
